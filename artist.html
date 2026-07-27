@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Artist Dashboard — Volta Records</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700&display=swap');
+  body{margin:0;background:#0b0b0f;color:#f4f0e8;font-family:'Inter',sans-serif;}
+  header{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.08);}
+  header h1{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:1.2em;margin:0;}
+  header h1 span{color:#e8b84b;}
+  #logout{background:none;border:1px solid rgba(255,255,255,0.2);color:#9a97a6;padding:8px 14px;border-radius:20px;font-size:0.8em;cursor:pointer;}
+  main{max-width:600px;margin:0 auto;padding:24px 20px 60px;}
+  .welcome{color:#9a97a6;margin-bottom:28px;}
+  .welcome b{color:#f4f0e8;}
+  section{background:#141319;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:22px;margin-bottom:20px;}
+  section h2{font-size:1.05em;margin:0 0 16px;text-transform:uppercase;letter-spacing:0.5px;color:#e8b84b;}
+  label{display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px;}
+  input,textarea{width:100%;padding:11px 13px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.12);color:#f4f0e8;border-radius:4px;font-size:0.92em;font-family:'Inter',sans-serif;}
+  textarea{resize:vertical;min-height:80px;}
+  button.submit{margin-top:16px;width:100%;padding:13px;background:#7c5cff;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;}
+  .msg{margin-top:10px;font-size:0.85em;}
+  .ok{color:#8fe08f;} .err{color:#ff8080;}
+  .release-item{border-left:3px solid #e8b84b;padding:10px 14px;margin-bottom:10px;background:#0b0b0f;border-radius:4px;}
+  .release-item .status{font-size:0.72em;text-transform:uppercase;color:#9a97a6;letter-spacing:0.5px;}
+  .release-item .status.pending{color:#e8b84b;}
+  .release-item .status.approved{color:#8fe08f;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Volta <span>Artist</span></h1>
+  <button id="logout">Log out</button>
+</header>
+
+<main>
+  <p class="welcome">Welcome, <b id="artistName">...</b></p>
+
+  <section>
+    <h2>Submit a Release</h2>
+    <label>Track title</label>
+    <input type="text" id="title">
+    <label>Description</label>
+    <textarea id="desc" placeholder="Genre, mood, story behind it..."></textarea>
+    <label>Link (Audiomack, YouTube, etc.)</label>
+    <input type="text" id="link">
+    <button class="submit" id="submitRelease">Submit for Review</button>
+    <div class="msg" id="releaseMsg"></div>
+  </section>
+
+  <section>
+    <h2>Your Submissions</h2>
+    <div id="myReleases">Loading...</div>
+  </section>
+
+  <section>
+    <h2>Edit Bio</h2>
+    <label>Your bio</label>
+    <textarea id="bio" placeholder="Tell fans and promoters about yourself..."></textarea>
+    <button class="submit" id="saveBio">Save Bio</button>
+    <div class="msg" id="bioMsg"></div>
+  </section>
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, query, where, getDocs, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC0Y51ipqSxtP8lgZhhdM_vUrqTIkm2VQo",
+    authDomain: "volta-records-7647c.firebaseapp.com",
+    projectId: "volta-records-7647c",
+    storageBucket: "volta-records-7647c.firebasestorage.app",
+    messagingSenderId: "965622035230",
+    appId: "1:965622035230:web:59184ef3b9b42504978f0f"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  let currentUser = null;
+
+  onAuthStateChanged(auth, async (user) => {
+    if(!user){ window.location.href = 'login.html'; return; }
+    currentUser = user;
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    const data = userDoc.data();
+    if(data.role !== 'artist'){ window.location.href = 'login.html'; return; }
+    document.getElementById('artistName').textContent = data.name || user.email;
+    document.getElementById('bio').value = data.bio || '';
+    loadReleases();
+  });
+
+  document.getElementById('logout').addEventListener('click', () => signOut(auth).then(() => window.location.href = 'login.html'));
+
+  document.getElementById('submitRelease').addEventListener('click', async () => {
+    const title = document.getElementById('title').value.trim();
+    const desc = document.getElementById('desc').value.trim();
+    const link = document.getElementById('link').value.trim();
+    const msg = document.getElementById('releaseMsg');
+
+    if(!title){ msg.textContent = 'Track title is required.'; msg.className='msg err'; return; }
+
+    await addDoc(collection(db, "releases"), {
+      title, desc, link,
+      artistId: currentUser.uid,
+      artistName: document.getElementById('artistName').textContent,
+      status: 'pending',
+      createdAt: serverTimestamp()
+    });
+
+    msg.textContent = 'Submitted! Awaiting admin approval.';
+    msg.className = 'msg ok';
+    document.getElementById('title').value = '';
+    document.getElementById('desc').value = '';
+    document.getElementById('link').value = '';
+    loadReleases();
+  });
+
+  document.getElementById('saveBio').addEventListener('click', async () => {
+    const bio = document.getElementById('bio').value.trim();
+    await updateDoc(doc(db, "users", currentUser.uid), { bio });
+    const msg = document.getElementById('bioMsg');
+    msg.textContent = 'Bio saved.';
+    msg.className = 'msg ok';
+  });
+
+  async function loadReleases(){
+    const q = query(collection(db, "releases"), where("artistId", "==", currentUser.uid));
+    const snap = await getDocs(q);
+    const container = document.getElementById('myReleases');
+    if(snap.empty){ container.innerHTML = '<p style="color:#9a97a6;font-size:0.9em;">No submissions yet.</p>'; return; }
+    container.innerHTML = '';
+    snap.forEach(d => {
+      const r = d.data();
+      const div = document.createElement('div');
+      div.className = 'release-item';
+      div.innerHTML = `<div class="status ${r.status}">${r.status}</div><div>${r.title}</div>`;
+      container.appendChild(div);
+    });
+  }
+</script>
+
+</body>
+</html>
