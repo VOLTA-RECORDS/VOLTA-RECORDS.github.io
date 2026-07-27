@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard — Volta Records</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700&display=swap');
+  body{margin:0;background:#0b0b0f;color:#f4f0e8;font-family:'Inter',sans-serif;}
+  header{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.08);position:sticky;top:0;background:#0b0b0f;z-index:10;}
+  header h1{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:1.2em;margin:0;}
+  header h1 span{color:#e8b84b;}
+  #logout{background:none;border:1px solid rgba(255,255,255,0.2);color:#9a97a6;padding:8px 14px;border-radius:20px;font-size:0.8em;cursor:pointer;}
+  .tabs{display:flex;gap:6px;padding:14px 20px 0;max-width:700px;margin:0 auto;overflow-x:auto;}
+  .tab{padding:9px 16px;border-radius:20px;font-size:0.82em;color:#9a97a6;border:1px solid rgba(255,255,255,0.1);white-space:nowrap;cursor:pointer;}
+  .tab.active{background:#e8b84b;color:#1a1503;border-color:#e8b84b;font-weight:700;}
+  main{max-width:700px;margin:0 auto;padding:20px 20px 60px;}
+  .panel{display:none;}
+  .panel.active{display:block;}
+  .item{background:#141319;border:1px solid rgba(255,255,255,0.08);border-left:3px solid #7c5cff;border-radius:6px;padding:16px 18px;margin-bottom:12px;}
+  .item.pending{border-left-color:#e8b84b;}
+  .item.new{border-left-color:#ff8080;}
+  .item b{display:block;}
+  .item p{margin:4px 0;color:#9a97a6;font-size:0.88em;}
+  .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+  .row button{padding:8px 14px;border:none;border-radius:4px;font-size:0.8em;font-weight:700;cursor:pointer;}
+  .approve{background:#8fe08f;color:#0b0b0f;}
+  .reject{background:#ff8080;color:#0b0b0f;}
+  .review{background:#7c5cff;color:#fff;}
+  select.roleSelect{padding:7px 10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;font-size:0.82em;}
+  .empty{color:#9a97a6;font-size:0.9em;text-align:center;padding:20px 0;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Volta <span>Admin</span></h1>
+  <button id="logout">Log out</button>
+</header>
+
+<div class="tabs">
+  <div class="tab active" data-panel="releases">Releases</div>
+  <div class="tab" data-panel="messages">Messages</div>
+  <div class="tab" data-panel="users">Accounts</div>
+</div>
+
+<main>
+  <div class="panel active" id="releases-panel">
+    <div id="releasesList">Loading...</div>
+  </div>
+
+  <div class="panel" id="messages-panel">
+    <div id="messagesList">Loading...</div>
+  </div>
+
+  <div class="panel" id="users-panel">
+    <div id="usersList">Loading...</div>
+  </div>
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, updateDoc, collection, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC0Y51ipqSxtP8lgZhhdM_vUrqTIkm2VQo",
+    authDomain: "volta-records-7647c.firebaseapp.com",
+    projectId: "volta-records-7647c",
+    storageBucket: "volta-records-7647c.firebasestorage.app",
+    messagingSenderId: "965622035230",
+    appId: "1:965622035230:web:59184ef3b9b42504978f0f"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  onAuthStateChanged(auth, async (user) => {
+    if(!user){ window.location.href = 'login.html'; return; }
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    if(!userDoc.exists() || userDoc.data().role !== 'admin'){ window.location.href = 'login.html'; return; }
+    loadReleases();
+    loadMessages();
+    loadUsers();
+  });
+
+  document.getElementById('logout').addEventListener('click', () => signOut(auth).then(() => window.location.href = 'login.html'));
+
+  // Tabs
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.panel + '-panel').classList.add('active');
+    });
+  });
+
+  async function loadReleases(){
+    const snap = await getDocs(collection(db, "releases"));
+    const container = document.getElementById('releasesList');
+    if(snap.empty){ container.innerHTML = '<div class="empty">No releases submitted yet.</div>'; return; }
+    container.innerHTML = '';
+    snap.forEach(d => {
+      const r = d.data();
+      const div = document.createElement('div');
+      div.className = 'item ' + r.status;
+      div.innerHTML = `
+        <b>${r.title}</b>
+        <p>by ${r.artistName} — status: ${r.status}</p>
+        <p>${r.desc || ''}</p>
+        ${r.link ? `<p><a href="${r.link}" style="color:#7c5cff;" target="_blank">${r.link}</a></p>` : ''}
+        <div class="row">
+          <button class="approve" data-id="${d.id}">Approve</button>
+          <button class="reject" data-id="${d.id}">Reject</button>
+        </div>`;
+      container.appendChild(div);
+    });
+    container.querySelectorAll('.approve').forEach(b => b.addEventListener('click', async () => {
+      await updateDoc(doc(db, "releases", b.dataset.id), { status: 'approved' });
+      loadReleases();
+    }));
+    container.querySelectorAll('.reject').forEach(b => b.addEventListener('click', async () => {
+      await updateDoc(doc(db, "releases", b.dataset.id), { status: 'rejected' });
+      loadReleases();
+    }));
+  }
+
+  async function loadMessages(){
+    const snap = await getDocs(collection(db, "messages"));
+    const container = document.getElementById('messagesList');
+    if(snap.empty){ container.innerHTML = '<div class="empty">No messages yet.</div>'; return; }
+    container.innerHTML = '';
+    snap.forEach(d => {
+      const m = d.data();
+      const div = document.createElement('div');
+      div.className = 'item ' + m.status;
+      div.innerHTML = `
+        <b>${m.from || 'Contact form'}</b>
+        <p>${m.regarding ? 'Re: ' + m.regarding : ''}</p>
+        <p>${m.proposal || m.message || ''}</p>
+        <div class="row">
+          <button class="review" data-id="${d.id}">${m.status === 'reviewed' ? 'Reviewed ✓' : 'Mark Reviewed'}</button>
+        </div>`;
+      container.appendChild(div);
+    });
+    container.querySelectorAll('.review').forEach(b => b.addEventListener('click', async () => {
+      await updateDoc(doc(db, "messages", b.dataset.id), { status: 'reviewed' });
+      loadMessages();
+    }));
+  }
+
+  async function loadUsers(){
+    const snap = await getDocs(collection(db, "users"));
+    const container = document.getElementById('usersList');
+    if(snap.empty){ container.innerHTML = '<div class="empty">No accounts yet.</div>'; return; }
+    container.innerHTML = '';
+    snap.forEach(d => {
+      const u = d.data();
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = `
+        <b>${u.name || u.email}</b>
+        <p>${u.email}</p>
+        <div class="row">
+          <select class="roleSelect" data-id="${d.id}">
+            <option value="artist" ${u.role==='artist'?'selected':''}>Artist</option>
+            <option value="promoter" ${u.role==='promoter'?'selected':''}>Promoter</option>
+            <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+          </select>
+        </div>`;
+      container.appendChild(div);
+    });
+    container.querySelectorAll('.roleSelect').forEach(s => s.addEventListener('change', async () => {
+      await updateDoc(doc(db, "users", s.dataset.id), { role: s.value });
+      loadUsers();
+    }));
+  }
+</script>
+
+</body>
+  </html>
