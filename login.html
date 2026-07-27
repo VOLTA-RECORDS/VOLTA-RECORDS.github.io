@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log In — Volta Records</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700&display=swap');
+  body{margin:0;background:#0b0b0f;color:#f4f0e8;font-family:'Inter',sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;}
+  .card{max-width:400px;width:100%;background:#141319;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:32px 26px;}
+  h1{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:1.6em;margin:0 0 6px;}
+  h1 span{color:#e8b84b;}
+  p.sub{color:#9a97a6;font-size:0.9em;margin:0 0 24px;}
+  label{display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 6px;}
+  input{width:100%;padding:12px 14px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.12);color:#f4f0e8;border-radius:4px;font-size:0.95em;}
+  button{width:100%;margin-top:22px;padding:14px;background:#e8b84b;color:#1a1503;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:0.95em;}
+  #msg{margin-top:14px;font-size:0.85em;text-align:center;}
+  .err{color:#ff8080;}
+  .foot{margin-top:18px;text-align:center;font-size:0.85em;color:#9a97a6;}
+  .foot a{color:#e8b84b;}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Log In to <span>Volta</span></h1>
+  <p class="sub">Artists, promoters, and admin — sign in below.</p>
+
+  <label>Email</label>
+  <input type="email" id="email" required>
+
+  <label>Password</label>
+  <input type="password" id="password" required>
+
+  <button id="loginBtn">Log In</button>
+  <div id="msg"></div>
+
+  <div class="foot">New here? <a href="signup.html">Create an account</a></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC0Y51ipqSxtP8lgZhhdM_vUrqTIkm2VQo",
+    authDomain: "volta-records-7647c.firebaseapp.com",
+    projectId: "volta-records-7647c",
+    storageBucket: "volta-records-7647c.firebasestorage.app",
+    messagingSenderId: "965622035230",
+    appId: "1:965622035230:web:59184ef3b9b42504978f0f"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  document.getElementById('loginBtn').addEventListener('click', async () => {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const msg = document.getElementById('msg');
+    msg.textContent = '';
+
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      const userDoc = await getDoc(doc(db, "users", cred.user.uid));
+
+      if(!userDoc.exists()){
+        msg.textContent = 'No profile found for this account.';
+        msg.className = 'err';
+        return;
+      }
+
+      const role = userDoc.data().role;
+      if(role === 'admin') window.location.href = 'admin.html';
+      else if(role === 'artist') window.location.href = 'artist.html';
+      else if(role === 'promoter') window.location.href = 'promoter.html';
+      else { msg.textContent = 'Unknown role on this account.'; msg.className = 'err'; }
+
+    } catch (e) {
+      msg.textContent = 'Wrong email or password.';
+      msg.className = 'err';
+    }
+  });
+</script>
+
+</body>
+  </html>
