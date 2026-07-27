@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Promoter Dashboard — Volta Records</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700&display=swap');
+  body{margin:0;background:#0b0b0f;color:#f4f0e8;font-family:'Inter',sans-serif;}
+  header{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.08);}
+  header h1{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:1.2em;margin:0;}
+  header h1 span{color:#7c5cff;}
+  #logout{background:none;border:1px solid rgba(255,255,255,0.2);color:#9a97a6;padding:8px 14px;border-radius:20px;font-size:0.8em;cursor:pointer;}
+  main{max-width:600px;margin:0 auto;padding:24px 20px 60px;}
+  .welcome{color:#9a97a6;margin-bottom:28px;}
+  .welcome b{color:#f4f0e8;}
+  section{background:#141319;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:22px;margin-bottom:20px;}
+  section h2{font-size:1.05em;margin:0 0 16px;text-transform:uppercase;letter-spacing:0.5px;color:#e8b84b;}
+  label{display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px;}
+  input,textarea{width:100%;padding:11px 13px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.12);color:#f4f0e8;border-radius:4px;font-size:0.92em;font-family:'Inter',sans-serif;}
+  textarea{resize:vertical;min-height:80px;}
+  button.submit{margin-top:16px;width:100%;padding:13px;background:#7c5cff;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;}
+  .msg{margin-top:10px;font-size:0.85em;}
+  .ok{color:#8fe08f;} .err{color:#ff8080;}
+  .track{border-left:3px solid #e8b84b;padding:12px 14px;margin-bottom:10px;background:#0b0b0f;border-radius:4px;}
+  .track b{display:block;}
+  .track p{margin:4px 0;color:#9a97a6;font-size:0.85em;}
+  .track a{color:#7c5cff;font-size:0.85em;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Volta <span>Promoter</span></h1>
+  <button id="logout">Log out</button>
+</header>
+
+<main>
+  <p class="welcome">Welcome, <b id="promoterName">...</b></p>
+
+  <section>
+    <h2>Approved Catalog</h2>
+    <div id="catalog">Loading...</div>
+  </section>
+
+  <section>
+    <h2>Send a Collaboration Request</h2>
+    <label>Regarding which artist/track</label>
+    <input type="text" id="regarding">
+    <label>Your proposal</label>
+    <textarea id="proposal" placeholder="What are you proposing — feature, promo, event, etc."></textarea>
+    <button class="submit" id="sendRequest">Send Request</button>
+    <div class="msg" id="reqMsg"></div>
+  </section>
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, collection, addDoc, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC0Y51ipqSxtP8lgZhhdM_vUrqTIkm2VQo",
+    authDomain: "volta-records-7647c.firebaseapp.com",
+    projectId: "volta-records-7647c",
+    storageBucket: "volta-records-7647c.firebasestorage.app",
+    messagingSenderId: "965622035230",
+    appId: "1:965622035230:web:59184ef3b9b42504978f0f"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  let currentUser = null;
+
+  onAuthStateChanged(auth, async (user) => {
+    if(!user){ window.location.href = 'login.html'; return; }
+    currentUser = user;
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    const data = userDoc.data();
+    if(data.role !== 'promoter'){ window.location.href = 'login.html'; return; }
+    document.getElementById('promoterName').textContent = data.name || user.email;
+    loadCatalog();
+  });
+
+  document.getElementById('logout').addEventListener('click', () => signOut(auth).then(() => window.location.href = 'login.html'));
+
+  document.getElementById('sendRequest').addEventListener('click', async () => {
+    const regarding = document.getElementById('regarding').value.trim();
+    const proposal = document.getElementById('proposal').value.trim();
+    const msg = document.getElementById('reqMsg');
+
+    if(!proposal){ msg.textContent = 'Please write your proposal.'; msg.className='msg err'; return; }
+
+    await addDoc(collection(db, "messages"), {
+      type: 'collaboration',
+      from: document.getElementById('promoterName').textContent,
+      fromId: currentUser.uid,
+      regarding, proposal,
+      status: 'new',
+      createdAt: serverTimestamp()
+    });
+
+    msg.textContent = 'Request sent to the label.';
+    msg.className = 'msg ok';
+    document.getElementById('regarding').value = '';
+    document.getElementById('proposal').value = '';
+  });
+
+  async function loadCatalog(){
+    const q = query(collection(db, "releases"), where("status", "==", "approved"));
+    const snap = await getDocs(q);
+    const container = document.getElementById('catalog');
+    if(snap.empty){ container.innerHTML = '<p style="color:#9a97a6;font-size:0.9em;">No approved releases yet.</p>'; return; }
+    container.innerHTML = '';
+    snap.forEach(d => {
+      const r = d.data();
+      const div = document.createElement('div');
+      div.className = 'track';
+      div.innerHTML = `<b>${r.title}</b><p>by ${r.artistName}</p><p>${r.desc || ''}</p>${r.link ? `<a href="${r.link}" target="_blank">Listen →</a>` : ''}`;
+      container.appendChild(div);
+    });
+  }
+</script>
+
+</body>
+  </html>
