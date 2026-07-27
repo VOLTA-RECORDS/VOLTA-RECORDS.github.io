@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Join Volta Records</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700&display=swap');
+  body{margin:0;background:#0b0b0f;color:#f4f0e8;font-family:'Inter',sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;padding:24px;}
+  .card{max-width:400px;width:100%;background:#141319;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:32px 26px;}
+  h1{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:1.6em;margin:0 0 6px;}
+  h1 span{color:#e8b84b;}
+  p.sub{color:#9a97a6;font-size:0.9em;margin:0 0 24px;}
+  label{display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 6px;}
+  input,select{width:100%;padding:12px 14px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.12);color:#f4f0e8;border-radius:4px;font-size:0.95em;}
+  button{width:100%;margin-top:22px;padding:14px;background:#7c5cff;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:0.95em;}
+  #msg{margin-top:14px;font-size:0.85em;text-align:center;}
+  .err{color:#ff8080;} .ok{color:#8fe08f;}
+  .foot{margin-top:18px;text-align:center;font-size:0.85em;color:#9a97a6;}
+  .foot a{color:#e8b84b;}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h1>Join <span>Volta</span></h1>
+  <p class="sub">Create your account as an artist or promoter.</p>
+
+  <label>Full name</label>
+  <input type="text" id="name" required>
+
+  <label>Email</label>
+  <input type="email" id="email" required>
+
+  <label>Password</label>
+  <input type="password" id="password" required minlength="6">
+
+  <label>I am a</label>
+  <select id="role">
+    <option value="artist">Artist</option>
+    <option value="promoter">Promoter</option>
+  </select>
+
+  <button id="signupBtn">Create Account</button>
+  <div id="msg"></div>
+
+  <div class="foot">Already have an account? <a href="login.html">Log in</a></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC0Y51ipqSxtP8lgZhhdM_vUrqTIkm2VQo",
+    authDomain: "volta-records-7647c.firebaseapp.com",
+    projectId: "volta-records-7647c",
+    storageBucket: "volta-records-7647c.firebasestorage.app",
+    messagingSenderId: "965622035230",
+    appId: "1:965622035230:web:59184ef3b9b42504978f0f"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  document.getElementById('signupBtn').addEventListener('click', async () => {
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const role = document.getElementById('role').value;
+    const msg = document.getElementById('msg');
+    msg.textContent = '';
+
+    if(!name || !email || password.length < 6){
+      msg.textContent = 'Please fill every field. Password needs 6+ characters.';
+      msg.className = 'err';
+      return;
+    }
+
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(cred.user, { displayName: name });
+      await setDoc(doc(db, "users", cred.user.uid), {
+        name, email, role, status: "active", createdAt: serverTimestamp()
+      });
+      msg.textContent = 'Account created! Redirecting...';
+      msg.className = 'ok';
+      setTimeout(() => window.location.href = 'login.html', 1200);
+    } catch (e) {
+      msg.textContent = e.message.replace('Firebase: ', '');
+      msg.className = 'err';
+    }
+  });
+</script>
+
+</body>
+  </html>
