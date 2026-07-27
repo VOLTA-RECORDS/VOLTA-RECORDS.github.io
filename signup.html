@@ -13,6 +13,10 @@
   p.sub{color:#9a97a6;font-size:0.9em;margin:0 0 24px;}
   label{display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 6px;}
   input,select{width:100%;padding:12px 14px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.12);color:#f4f0e8;border-radius:4px;font-size:0.95em;}
+  .pw-wrap{position:relative;}
+  .pw-wrap input{padding-right:52px;}
+  .pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:#9a97a6;cursor:pointer;padding:6px;width:auto;margin:0;display:flex;align-items:center;}
+  .pw-toggle svg{width:20px;height:20px;}
   button{width:100%;margin-top:22px;padding:14px;background:#7c5cff;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;font-size:0.95em;}
   #msg{margin-top:14px;font-size:0.85em;text-align:center;}
   .err{color:#ff8080;} .ok{color:#8fe08f;}
@@ -33,7 +37,15 @@
   <input type="email" id="email" required>
 
   <label>Password</label>
-  <input type="password" id="password" required minlength="6">
+  <div class="pw-wrap">
+    <input type="password" id="password" required minlength="6">
+    <button type="button" class="pw-toggle" id="pwToggle" aria-label="Show password">
+      <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+    </button>
+  </div>
 
   <label>I am a</label>
   <select id="role">
@@ -49,7 +61,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getAuth, createUserWithEmailAndPassword, updateProfile } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getAuth, createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -64,6 +76,18 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
+
+  document.getElementById('pwToggle').addEventListener('click', () => {
+    const pw = document.getElementById('password');
+    const icon = document.getElementById('eyeIcon');
+    if(pw.type === 'password'){
+      pw.type = 'text';
+      icon.innerHTML = '<path d="M17.94 17.94A10.94 10.94 0 0 1 12 20c-7 0-11-8-11-8a21.6 21.6 0 0 1 5.06-6.06M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a21.6 21.6 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    } else {
+      pw.type = 'password';
+      icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8Z"/><circle cx="12" cy="12" r="3"/>';
+    }
+  });
 
   document.getElementById('signupBtn').addEventListener('click', async () => {
     const name = document.getElementById('name').value.trim();
@@ -85,9 +109,10 @@
       await setDoc(doc(db, "users", cred.user.uid), {
         name, email, role, status: "active", createdAt: serverTimestamp()
       });
-      msg.textContent = 'Account created! Redirecting...';
+      await sendEmailVerification(cred.user);
+      msg.textContent = 'Account created! Check your email to verify, then log in.';
       msg.className = 'ok';
-      setTimeout(() => window.location.href = 'login.html', 1200);
+      setTimeout(() => window.location.href = 'login.html', 2500);
     } catch (e) {
       msg.textContent = e.message.replace('Firebase: ', '');
       msg.className = 'err';
@@ -96,4 +121,4 @@
 </script>
 
 </body>
-  </html>
+</html>
