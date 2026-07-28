@@ -3,75 +3,410 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Artist Dashboard — Volta Records</title>
+<title>Admin Dashboard — Volta Records</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700&display=swap');
-  body{margin:0;background:#0b0b0f;color:#f4f0e8;font-family:'Inter',sans-serif;}
-  header{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.08);}
-  header h1{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:1.2em;margin:0;}
-  header h1 span{color:#e8b84b;}
-  #logout{background:none;border:1px solid rgba(255,255,255,0.2);color:#9a97a6;padding:8px 14px;border-radius:20px;font-size:0.8em;cursor:pointer;}
-  main{max-width:600px;margin:0 auto;padding:24px 20px 60px;}
-  .welcome{color:#9a97a6;margin-bottom:28px;}
-  .welcome b{color:#f4f0e8;}
-  section{background:#141319;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:22px;margin-bottom:20px;}
-  section h2{font-size:1.05em;margin:0 0 16px;text-transform:uppercase;letter-spacing:0.5px;color:#e8b84b;}
-  label{display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px;}
-  input,textarea{width:100%;padding:11px 13px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.12);color:#f4f0e8;border-radius:4px;font-size:0.92em;font-family:'Inter',sans-serif;}
-  textarea{resize:vertical;min-height:80px;}
-  button.submit{margin-top:16px;width:100%;padding:13px;background:#7c5cff;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;}
-  .msg{margin-top:10px;font-size:0.85em;}
-  .ok{color:#8fe08f;} .err{color:#ff8080;}
-  .release-item{border-left:3px solid #e8b84b;padding:10px 14px;margin-bottom:10px;background:#0b0b0f;border-radius:4px;}
-  .release-item .status{font-size:0.72em;text-transform:uppercase;color:#9a97a6;letter-spacing:0.5px;}
-  .release-item .status.pending{color:#e8b84b;}
-  .release-item .status.approved{color:#8fe08f;}
+  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap');
+
+  :root{
+    --ink:#0b0b0f;
+    --panel:#15141b;
+    --panel2:#1c1a24;
+    --gold:#e8b84b;
+    --volt:#7c5cff;
+    --paper:#f4f0e8;
+    --dim:#9a97a6;
+    --good:#3ddc84;
+    --bad:#ff5c7a;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{margin:0;background:var(--ink);color:var(--paper);font-family:'Inter',sans-serif;padding-bottom:86px;}
+
+  header{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:16px 20px;position:sticky;top:0;background:rgba(11,11,15,0.92);
+    backdrop-filter:blur(10px);z-index:10;border-bottom:1px solid rgba(255,255,255,0.06);
+  }
+  .brand{display:flex;align-items:center;gap:10px;}
+  .brand .dot{width:10px;height:10px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold);}
+  header h1{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:1.15em;margin:0;letter-spacing:0.5px;}
+  header h1 span{color:var(--gold);}
+  #logout{
+    width:38px;height:38px;border-radius:50%;background:var(--panel2);
+    border:1px solid rgba(255,255,255,0.08);color:var(--dim);display:flex;
+    align-items:center;justify-content:center;cursor:pointer;
+  }
+  #logout:active{background:var(--bad);color:#fff;}
+
+  main{max-width:640px;margin:0 auto;padding:18px 16px 30px;}
+  .panel{display:none;animation:fadeUp 0.25s ease;}
+  .panel.active{display:block;}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+  .section-label{font-size:0.72em;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);font-weight:700;margin:4px 2px 12px;}
+
+  .card{
+    background:var(--panel);border:1px solid rgba(255,255,255,0.06);border-radius:16px;
+    padding:16px 16px;box-shadow:0 4px 16px rgba(0,0,0,0.25);position:relative;z-index:2;
+  }
+  .card.pending{box-shadow:0 4px 16px rgba(232,184,75,0.08);border-color:rgba(232,184,75,0.25);}
+  .card.new{border-color:rgba(255,92,122,0.3);}
+
+  .row-top{display:flex;gap:12px;align-items:flex-start;}
+  .avatar{
+    width:42px;height:42px;border-radius:50%;flex-shrink:0;
+    background:linear-gradient(135deg, var(--volt), var(--gold));
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Anton',sans-serif;font-size:0.95em;color:#0b0b0f;
+  }
+  .card b{display:block;font-size:0.98em;}
+  .card .meta{color:var(--dim);font-size:0.78em;margin-top:2px;}
+  .card p.desc{margin:8px 0 0;color:#cfcbd9;font-size:0.88em;line-height:1.4;}
+  .card a.link{color:var(--volt);font-size:0.85em;}
+
+  .pill-row{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;}
+  .pill{
+    padding:9px 16px;border:none;border-radius:20px;font-size:0.78em;font-weight:700;
+    cursor:pointer;display:flex;align-items:center;gap:6px;
+  }
+  .pill-good{background:rgba(61,220,132,0.15);color:var(--good);}
+  .pill-good:active{background:var(--good);color:#06210f;}
+  .pill-bad{background:rgba(255,92,122,0.15);color:var(--bad);}
+  .pill-bad:active{background:var(--bad);color:#2a0710;}
+  .pill-volt{background:rgba(124,92,255,0.18);color:#b6a4ff;}
+  .pill-volt:active{background:var(--volt);color:#fff;}
+  .pill-gold{background:rgba(232,184,75,0.18);color:var(--gold);}
+  .pill-gold:active{background:var(--gold);color:#1a1503;}
+
+  .status-chip{
+    font-size:0.68em;font-weight:700;padding:3px 9px;border-radius:10px;
+    text-transform:uppercase;letter-spacing:0.4px;
+  }
+  .chip-pending{background:rgba(232,184,75,0.18);color:var(--gold);}
+  .chip-approved{background:rgba(61,220,132,0.18);color:var(--good);}
+  .chip-rejected{background:rgba(255,92,122,0.18);color:var(--bad);}
+  .chip-new{background:rgba(255,92,122,0.18);color:var(--bad);}
+  .chip-reviewed{background:rgba(154,151,166,0.18);color:var(--dim);}
+  .chip-draft{background:rgba(232,184,75,0.18);color:var(--gold);}
+  .chip-published{background:rgba(61,220,132,0.18);color:var(--good);}
+
+  select.roleSelect{
+    padding:9px 12px;background:var(--panel2);border:1px solid rgba(255,255,255,0.1);
+    color:var(--paper);border-radius:10px;font-size:0.82em;margin-top:10px;
+  }
+
+  .empty{color:var(--dim);font-size:0.9em;text-align:center;padding:36px 0;}
+  .empty .big{font-size:2.2em;display:block;margin-bottom:8px;}
+
+  /* Skeleton loading */
+  .skeleton-card{
+    background:var(--panel);border:1px solid rgba(255,255,255,0.06);border-radius:16px;
+    padding:16px;margin-bottom:12px;display:flex;gap:12px;
+  }
+  .skel{border-radius:8px;background:linear-gradient(90deg, var(--panel2) 25%, #262331 37%, var(--panel2) 63%);background-size:400% 100%;animation:shimmer 1.4s ease infinite;}
+  @keyframes shimmer{0%{background-position:100% 0;}100%{background-position:0 0;}}
+  .skel-avatar{width:42px;height:42px;border-radius:50%;flex-shrink:0;}
+  .skel-lines{flex:1;display:flex;flex-direction:column;gap:8px;}
+  .skel-line{height:11px;border-radius:6px;}
+  .skel-line.w60{width:60%;}
+  .skel-line.w90{width:90%;}
+  .skel-line.w40{width:40%;}
+
+  /* Swipe cards */
+  .swipe-item{position:relative;margin-bottom:12px;border-radius:16px;overflow:hidden;}
+  .swipe-bg{
+    position:absolute;inset:0;display:flex;justify-content:space-between;align-items:center;
+    padding:0 22px;font-size:0.8em;font-weight:800;text-transform:uppercase;letter-spacing:0.4px;
+    border-radius:16px;z-index:1;
+  }
+  .swipe-bg .left-hint{color:var(--good);}
+  .swipe-bg .right-hint{color:var(--bad);}
+  .swipe-item.dragging .card{transition:none;}
+  .swipe-item .card{transition:transform 0.25s ease;touch-action:pan-y;}
+
+  /* Settings panel */
+  .field-label{display:block;font-size:0.75em;color:var(--dim);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px;font-weight:700;}
+  .field-input{
+    width:100%;padding:12px 14px;background:var(--panel2);border:1px solid rgba(255,255,255,0.08);
+    color:var(--paper);border-radius:12px;margin-bottom:14px;font-family:'Inter',sans-serif;font-size:0.92em;
+  }
+  .btn-full{width:100%;padding:14px;border:none;border-radius:12px;font-weight:800;font-size:0.9em;cursor:pointer;letter-spacing:0.2px;}
+  .btn-gold{background:var(--gold);color:#1a1503;}
+  .btn-volt{background:var(--volt);color:#fff;}
+  .msg-line{margin-top:10px;font-size:0.85em;font-weight:600;}
+  .card{margin-bottom:12px;}
+  .settings-panel-inner .card{margin-bottom:12px;}
+
+  /* Bottom nav */
+  .tabs{
+    position:fixed;bottom:0;left:0;right:0;z-index:50;
+    display:flex;justify-content:space-around;align-items:center;
+    background:rgba(15,14,20,0.96);backdrop-filter:blur(14px);
+    border-top:1px solid rgba(255,255,255,0.07);
+    padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+  }
+  .tab{
+    display:flex;flex-direction:column;align-items:center;gap:3px;
+    color:var(--dim);font-size:0.62em;font-weight:700;text-transform:uppercase;
+    letter-spacing:0.3px;cursor:pointer;position:relative;padding:4px 10px;border-radius:12px;
+    transition:color 0.15s;
+  }
+  .tab svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;}
+  .tab.active{color:var(--gold);}
+  .tab.active svg{fill:rgba(232,184,75,0.15);}
+  .badge{
+    position:absolute;top:-2px;right:2px;min-width:16px;height:16px;padding:0 4px;
+    background:var(--bad);color:#fff;border-radius:9px;font-size:0.62em;
+    display:flex;align-items:center;justify-content:center;font-weight:800;
+    box-shadow:0 0 0 2px var(--ink);
+  }
+
+  /* FAB + compose drawer */
+  .fab{
+    position:fixed;bottom:96px;right:20px;width:56px;height:56px;border-radius:50%;
+    background:linear-gradient(135deg, var(--volt), var(--gold));border:none;
+    display:flex;align-items:center;justify-content:center;color:#0b0b0f;
+    box-shadow:0 8px 22px rgba(124,92,255,0.4);cursor:pointer;z-index:40;
+  }
+  .fab svg{width:24px;height:24px;stroke:#0b0b0f;stroke-width:2.5;}
+
+  .drawer-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,0.55);z-index:60;
+    display:none;align-items:flex-end;
+  }
+  .drawer-overlay.open{display:flex;}
+  .drawer{
+    background:var(--panel);width:100%;max-width:640px;margin:0 auto;
+    border-radius:20px 20px 0 0;padding:20px 18px calc(24px + env(safe-area-inset-bottom));
+    max-height:88vh;overflow-y:auto;animation:slideUp 0.22s ease;
+  }
+  @keyframes slideUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+  .drawer-handle{width:38px;height:4px;background:rgba(255,255,255,0.15);border-radius:3px;margin:0 auto 16px;}
+  .drawer-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+  .drawer-head h3{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:1.05em;margin:0;}
+  #closeDrawer{background:none;border:none;color:var(--dim);cursor:pointer;padding:6px;}
+  #closeDrawer svg{width:20px;height:20px;}
+
+  /* Confirm modal */
+  .confirm-overlay{
+    position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:80;
+    display:none;align-items:center;justify-content:center;padding:24px;
+  }
+  .confirm-overlay.open{display:flex;}
+  .confirm-box{
+    background:var(--panel);border-radius:18px;padding:22px 20px;max-width:340px;width:100%;
+    animation:slideUp 0.2s ease;border:1px solid rgba(255,255,255,0.08);
+  }
+  .confirm-box h4{font-family:'Anton',sans-serif;text-transform:uppercase;margin:0 0 8px;font-size:1.05em;}
+  .confirm-box p{color:var(--dim);font-size:0.88em;margin:0 0 18px;line-height:1.4;}
+  .confirm-actions{display:flex;gap:10px;}
+  .confirm-actions button{flex:1;padding:12px;border:none;border-radius:10px;font-weight:800;font-size:0.85em;cursor:pointer;}
+  .confirm-cancel{background:var(--panel2);color:var(--paper);}
+  .confirm-delete{background:var(--bad);color:#2a0710;}
+
+  /* Toasts */
+  .toast-stack{
+    position:fixed;top:14px;left:0;right:0;z-index:100;
+    display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none;
+  }
+  .toast{
+    background:#1c1a24;border:1px solid rgba(255,255,255,0.1);color:var(--paper);
+    padding:11px 18px;border-radius:30px;font-size:0.82em;font-weight:600;
+    box-shadow:0 8px 24px rgba(0,0,0,0.4);display:flex;align-items:center;gap:8px;
+    animation:toastIn 0.25s ease;max-width:90vw;
+  }
+  .toast.good{border-color:rgba(61,220,132,0.4);}
+  .toast.bad{border-color:rgba(255,92,122,0.4);}
+  .toast .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .toast.good .dot{background:var(--good);}
+  .toast.bad .dot{background:var(--bad);}
+  .toast.info .dot{background:var(--volt);}
+  @keyframes toastIn{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
+  .toast.leaving{animation:toastOut 0.2s ease forwards;}
+  @keyframes toastOut{to{opacity:0;transform:translateY(-8px);}}
+
+  /* Desktop/tablet: sidebar nav instead of bottom bar */
+  @media (min-width: 900px){
+    body{padding-bottom:0;padding-left:220px;}
+    header{padding-left:36px;}
+    main{max-width:760px;margin:0;padding:24px 32px 40px;}
+
+    .tabs{
+      top:0;bottom:0;left:0;right:auto;width:220px;
+      flex-direction:column;justify-content:flex-start;align-items:stretch;
+      padding:24px 12px;gap:4px;border-top:none;border-right:1px solid rgba(255,255,255,0.07);
+    }
+    .tab{
+      flex-direction:row;justify-content:flex-start;align-items:center;gap:12px;
+      padding:11px 14px;border-radius:10px;font-size:0.78em;
+    }
+    .tab.active{background:rgba(232,184,75,0.1);}
+    .tab svg{width:20px;height:20px;}
+    .badge{position:static;margin-left:auto;box-shadow:none;}
+
+    .fab{right:36px;bottom:36px;}
+    .drawer-overlay{align-items:center;justify-content:center;}
+    .drawer{border-radius:20px;max-width:480px;margin:0;}
+  }
 </style>
 </head>
 <body>
 
+<div class="toast-stack" id="toastStack"></div>
+
 <header>
-  <h1>Volta <span>Artist</span></h1>
-  <button id="logout">Log out</button>
+  <div class="brand">
+    <span class="dot"></span>
+    <h1>Volta <span>Admin</span></h1>
+  </div>
+  <button id="logout" title="Log out">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+  </button>
 </header>
 
 <main>
-  <p class="welcome">Welcome, <b id="artistName">...</b></p>
+  <div class="panel active" id="releases-panel">
+    <div class="section-label">Release submissions</div>
+    <div id="releasesList"></div>
+  </div>
 
-  <section>
-    <h2>Submit a Release</h2>
-    <label>Track title</label>
-    <input type="text" id="title">
-    <label>Description</label>
-    <textarea id="desc" placeholder="Genre, mood, story behind it..."></textarea>
-    <label>Link (Audiomack, YouTube, etc.)</label>
-    <input type="text" id="link">
-    <button class="submit" id="submitRelease">Submit for Review</button>
-    <div class="msg" id="releaseMsg"></div>
-  </section>
+  <div class="panel" id="messages-panel">
+    <div class="section-label">Inbox</div>
+    <div id="messagesList"></div>
+  </div>
 
-  <section>
-    <h2>Your Submissions</h2>
-    <div id="myReleases">Loading...</div>
-  </section>
+  <div class="panel" id="users-panel">
+    <div class="section-label">Accounts</div>
+    <div id="usersList"></div>
+  </div>
 
-  <section>
-    <h2>Edit Bio</h2>
-    <label>Your bio</label>
-    <textarea id="bio" placeholder="Tell fans and promoters about yourself..."></textarea>
-    <button class="submit" id="saveBio">Save Bio</button>
-    <div class="msg" id="bioMsg"></div>
-  </section>
-  <section>
-    <h2>Chat</h2>
+  <div class="panel" id="posts-panel">
+    <div class="section-label">Published updates</div>
+    <div id="postsList"></div>
+  </div>
+
+  <div class="panel" id="settings-panel">
+    <div class="settings-panel-inner">
+      <div class="section-label">Site appearance</div>
+      <div class="card">
+        <label class="field-label">Website template</label>
+        <select id="siteLayout" class="field-input">
+          <option value="classic">Classic — centered, stacked</option>
+          <option value="split">Split — side-by-side hero</option>
+          <option value="editorial">Editorial — magazine style</option>
+          <option value="bold">Bold — big color blocks</option>
+          <option value="minimal">Minimal — clean whitespace</option>
+        </select>
+        <label class="field-label">Color palette</label>
+        <select id="sitePalette" class="field-input">
+          <option value="default">Gold & Violet (default)</option>
+          <option value="crimson">Crimson & Amber</option>
+          <option value="emerald">Emerald & Peach</option>
+          <option value="neon">Neon Teal & Magenta</option>
+          <option value="earth">Earth & Olive</option>
+          <option value="mono">Monochrome</option>
+        </select>
+        <button class="btn-full btn-gold" id="saveTheme">Apply to Live Site</button>
+        <div id="themeMsg" class="msg-line"></div>
+      </div>
+
+      <div class="section-label">Social links</div>
+      <div class="card">
+        <label class="field-label">WhatsApp link</label>
+        <input type="text" id="socialWhatsapp" class="field-input">
+        <label class="field-label">Facebook link</label>
+        <input type="text" id="socialFacebook" class="field-input">
+        <label class="field-label">TikTok link</label>
+        <input type="text" id="socialTiktok" class="field-input">
+        <button class="btn-full btn-volt" id="saveSocials">Save Links</button>
+        <div id="socialsMsg" class="msg-line"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="chat-panel">
+    <div class="section-label">Direct Messages</div>
     <div id="chatContainer"></div>
-  </section>
+  </div>
 </main>
+
+<button class="fab" id="openComposer" title="New post">
+  <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+
+<div class="drawer-overlay" id="drawerOverlay">
+  <div class="drawer">
+    <div class="drawer-handle"></div>
+    <div class="drawer-head">
+      <h3>New Post</h3>
+      <button id="closeDrawer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <label class="field-label">Post title</label>
+    <input type="text" id="postTitle" class="field-input">
+    <label class="field-label">Media type (optional)</label>
+    <select id="postMediaType" class="field-input">
+      <option value="">None</option>
+      <option value="image">Image</option>
+      <option value="video">Video (YouTube link or .mp4 link)</option>
+      <option value="audio">Audio (Audiomack embed or .mp3 link)</option>
+    </select>
+    <label class="field-label">Media URL</label>
+    <input type="text" id="postImage" placeholder="https://..." class="field-input">
+    <label class="field-label">Post content</label>
+    <textarea id="postBody" class="field-input" style="min-height:100px;resize:vertical;"></textarea>
+    <div class="pill-row" style="margin-top:2px;">
+      <button class="btn-full btn-volt" id="publishPost" style="flex:1;">Publish Post</button>
+      <button class="btn-full" id="saveDraftPost" style="flex:1;background:var(--panel2);color:var(--gold);border:1px solid rgba(232,184,75,0.3);">Save Draft</button>
+    </div>
+    <div id="postMsg" class="msg-line"></div>
+  </div>
+</div>
+
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <h4 id="confirmTitle">Delete this?</h4>
+    <p id="confirmBody">This can't be undone.</p>
+    <div class="confirm-actions">
+      <button class="confirm-cancel" id="confirmCancelBtn">Cancel</button>
+      <button class="confirm-delete" id="confirmOkBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-panel="releases">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.5"/></svg>
+    <span>Releases</span>
+    <span class="badge" id="badgeReleases" style="display:none;">0</span>
+  </div>
+  <div class="tab" data-panel="messages">
+    <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    <span>Inbox</span>
+    <span class="badge" id="badgeMessages" style="display:none;">0</span>
+  </div>
+  <div class="tab" data-panel="users">
+    <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    <span>Accounts</span>
+  </div>
+  <div class="tab" data-panel="posts">
+    <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+    <span>Posts</span>
+  </div>
+  <div class="tab" data-panel="settings">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <span>Links</span>
+  </div>
+  <div class="tab" data-panel="chat">
+    <svg viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+    <span>Chat</span>
+  </div>
+</div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, query, where, getDocs, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, addDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
   import { mountChat } from "./chat.js";
 
   const firebaseConfig = {
@@ -86,68 +421,365 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
-  let currentUser = null;
+
+  function initials(str){
+    if(!str) return '?';
+    const parts = str.trim().split(/\s+/);
+    return ((parts[0]?.[0]||'') + (parts[1]?.[0]||'')).toUpperCase() || str[0].toUpperCase();
+  }
+  function chip(status){
+    return `<span class="status-chip chip-${status}">${status}</span>`;
+  }
+  function setBadge(id, count){
+    const el = document.getElementById(id);
+    if(count > 0){ el.style.display='flex'; el.textContent = count > 9 ? '9+' : count; }
+    else { el.style.display='none'; }
+  }
+
+  // ---------- Toasts ----------
+  function showToast(message, type='info'){
+    const stack = document.getElementById('toastStack');
+    const el = document.createElement('div');
+    el.className = 'toast ' + type;
+    el.innerHTML = `<span class="dot"></span>${message}`;
+    stack.appendChild(el);
+    setTimeout(() => {
+            el.classList.add('leaving');
+      setTimeout(() => el.remove(), 200);
+    }, 2600);
+  }
+
+  // ---------- Confirm modal ----------
+  const confirmOverlay = document.getElementById('confirmOverlay');
+  const confirmTitle = document.getElementById('confirmTitle');
+  const confirmBody = document.getElementById('confirmBody');
+  const confirmOkBtn = document.getElementById('confirmOkBtn');
+  const confirmCancelBtn = document.getElementById('confirmCancelBtn');
+  let confirmResolver = null;
+
+  function askConfirm(title, body){
+    confirmTitle.textContent = title;
+    confirmBody.textContent = body;
+    confirmOverlay.classList.add('open');
+    return new Promise(resolve => { confirmResolver = resolve; });
+  }
+  confirmOkBtn.addEventListener('click', () => { confirmOverlay.classList.remove('open'); if(confirmResolver) confirmResolver(true); });
+  confirmCancelBtn.addEventListener('click', () => { confirmOverlay.classList.remove('open'); if(confirmResolver) confirmResolver(false); });
+  confirmOverlay.addEventListener('click', (e) => { if(e.target === confirmOverlay){ confirmOverlay.classList.remove('open'); if(confirmResolver) confirmResolver(false); } });
+
+  // ---------- Skeleton loading ----------
+  function skeletonHTML(count=3){
+    let out = '';
+    for(let i=0;i<count;i++){
+      out += `<div class="skeleton-card">
+        <div class="skel skel-avatar"></div>
+        <div class="skel-lines">
+          <div class="skel skel-line w60"></div>
+          <div class="skel skel-line w40"></div>
+          <div class="skel skel-line w90"></div>
+        </div>
+      </div>`;
+    }
+    return out;
+  }
+  ['releasesList','messagesList','usersList'].forEach(id => {
+    document.getElementById(id).innerHTML = skeletonHTML(3);
+  });
+
+  // ---------- Swipe gesture ----------
+  function attachSwipe(swipeItemEl, cardEl, { onRight, onLeft, rightLabel, leftLabel }){
+    let startX = 0, currentX = 0, dragging = false;
+    const threshold = 90;
+
+    cardEl.addEventListener('pointerdown', (e) => {
+      dragging = true;
+      startX = e.clientX;
+      swipeItemEl.classList.add('dragging');
+      cardEl.setPointerCapture(e.pointerId);
+    });
+    cardEl.addEventListener('pointermove', (e) => {
+      if(!dragging) return;
+      currentX = e.clientX - startX;
+      const clamped = Math.max(-140, Math.min(140, currentX));
+      cardEl.style.transform = `translateX(${clamped}px)`;
+    });
+    function endDrag(){
+      if(!dragging) return;
+      dragging = false;
+      swipeItemEl.classList.remove('dragging');
+      if(currentX > threshold && onRight){
+        cardEl.style.transform = `translateX(140px)`;
+        onRight();
+      } else if(currentX < -threshold && onLeft){
+        cardEl.style.transform = `translateX(-140px)`;
+        onLeft();
+      } else {
+        cardEl.style.transform = 'translateX(0)';
+      }
+      currentX = 0;
+    }
+    cardEl.addEventListener('pointerup', endDrag);
+    cardEl.addEventListener('pointercancel', endDrag);
+  }
+  function swipeBgHTML(leftLabel, rightLabel){
+    return `<div class="swipe-bg">
+      <span class="left-hint">${leftLabel || ''}</span>
+      <span class="right-hint">${rightLabel || ''}</span>
+    </div>`;
+  }
 
   onAuthStateChanged(auth, async (user) => {
     if(!user){ window.location.href = 'login.html'; return; }
-    currentUser = user;
     const userDoc = await getDoc(doc(db, "users", user.uid));
-    const data = userDoc.data();
-    if(data.role !== 'artist'){ window.location.href = 'login.html'; return; }
-    document.getElementById('artistName').textContent = data.name || user.email;
-    document.getElementById('bio').value = data.bio || '';
+    if(!userDoc.exists() || userDoc.data().role !== 'admin'){ window.location.href = 'login.html'; return; }
     loadReleases();
-    mountChat(document.getElementById('chatContainer'), user.uid, 'artist', data.name || user.email);
+    loadMessages();
+    loadUsers();
+    loadPosts();
+    loadSocials();
+    loadTheme();
+    mountChat(document.getElementById('chatContainer'), user.uid, 'admin', userDoc.data().name || user.email);
   });
 
   document.getElementById('logout').addEventListener('click', () => signOut(auth).then(() => window.location.href = 'login.html'));
 
-  document.getElementById('submitRelease').addEventListener('click', async () => {
-    const title = document.getElementById('title').value.trim();
-    const desc = document.getElementById('desc').value.trim();
-    const link = document.getElementById('link').value.trim();
-    const msg = document.getElementById('releaseMsg');
-
-    if(!title){ msg.textContent = 'Track title is required.'; msg.className='msg err'; return; }
-
-    await addDoc(collection(db, "releases"), {
-      title, desc, link,
-      artistId: currentUser.uid,
-      artistName: document.getElementById('artistName').textContent,
-      status: 'pending',
-      createdAt: serverTimestamp()
+  // Tabs
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.panel + '-panel').classList.add('active');
     });
-
-    msg.textContent = 'Submitted! Awaiting admin approval.';
-    msg.className = 'msg ok';
-    document.getElementById('title').value = '';
-    document.getElementById('desc').value = '';
-    document.getElementById('link').value = '';
-    loadReleases();
   });
 
-  document.getElementById('saveBio').addEventListener('click', async () => {
-    const bio = document.getElementById('bio').value.trim();
-    await updateDoc(doc(db, "users", currentUser.uid), { bio });
-    const msg = document.getElementById('bioMsg');
-    msg.textContent = 'Bio saved.';
-    msg.className = 'msg ok';
-  });
+  // Composer drawer
+  const overlay = document.getElementById('drawerOverlay');
+  document.getElementById('openComposer').addEventListener('click', () => overlay.classList.add('open'));
+  document.getElementById('closeDrawer').addEventListener('click', () => overlay.classList.remove('open'));
+  overlay.addEventListener('click', (e) => { if(e.target === overlay) overlay.classList.remove('open'); });
 
   async function loadReleases(){
-    const q = query(collection(db, "releases"), where("artistId", "==", currentUser.uid));
-    const snap = await getDocs(q);
-    const container = document.getElementById('myReleases');
-    if(snap.empty){ container.innerHTML = '<p style="color:#9a97a6;font-size:0.9em;">No submissions yet.</p>'; return; }
+    const snap = await getDocs(collection(db, "releases"));
+    const container = document.getElementById('releasesList');
+    if(snap.empty){ container.innerHTML = '<div class="empty"><span class="big">🎵</span>No releases submitted yet.</div>'; setBadge('badgeReleases',0); return; }
     container.innerHTML = '';
+    let pendingCount = 0;
     snap.forEach(d => {
       const r = d.data();
+      if(r.status === 'pending') pendingCount++;
+      const wrap = document.createElement('div');
+      wrap.className = 'swipe-item';
+      wrap.innerHTML = `
+        ${swipeBgHTML('✓ Approve', 'Reject ✕')}
+        <div class="card ${r.status === 'pending' ? 'pending' : ''}">
+          <div class="row-top">
+            <div class="avatar">${initials(r.artistName)}</div>
+            <div style="flex:1;">
+              <b>${r.title}</b>
+              <div class="meta">by ${r.artistName} · ${chip(r.status)}</div>
+              ${r.desc ? `<p class="desc">${r.desc}</p>` : ''}
+              ${r.link ? `<p><a class="link" href="${r.link}" target="_blank">${r.link}</a></p>` : ''}
+            </div>
+          </div>
+          <div class="pill-row">
+            <button class="pill pill-good" data-id="${d.id}" data-action="approve">Approve</button>
+            <button class="pill pill-bad" data-id="${d.id}" data-action="reject">Reject</button>
+          </div>
+        </div>`;
+      container.appendChild(wrap);
+      const cardEl = wrap.querySelector('.card');
+      attachSwipe(wrap, cardEl, {
+        onRight: async () => { await updateDoc(doc(db, "releases", d.id), { status: 'approved' }); showToast(`"${r.title}" approved`, 'good'); loadReleases(); },
+        onLeft: async () => { await updateDoc(doc(db, "releases", d.id), { status: 'rejected' }); showToast(`"${r.title}" rejected`, 'bad'); loadReleases(); }
+      });
+    });
+    setBadge('badgeReleases', pendingCount);
+    container.querySelectorAll('[data-action="approve"]').forEach(b => b.addEventListener('click', async () => {
+      await updateDoc(doc(db, "releases", b.dataset.id), { status: 'approved' });
+      showToast('Release approved', 'good');
+      loadReleases();
+    }));
+    container.querySelectorAll('[data-action="reject"]').forEach(b => b.addEventListener('click', async () => {
+      await updateDoc(doc(db, "releases", b.dataset.id), { status: 'rejected' });
+      showToast('Release rejected', 'bad');
+      loadReleases();
+    }));
+  }
+
+  async function loadMessages(){
+    const snap = await getDocs(collection(db, "messages"));
+    const container = document.getElementById('messagesList');
+    if(snap.empty){ container.innerHTML = '<div class="empty"><span class="big">💬</span>No messages yet.</div>'; setBadge('badgeMessages',0); return; }
+    container.innerHTML = '';
+    let newCount = 0;
+    snap.forEach(d => {
+      const m = d.data();
+      if(m.status === 'new') newCount++;
+      const wrap = document.createElement('div');
+      wrap.className = 'swipe-item';
+      wrap.innerHTML = `
+        ${swipeBgHTML('✓ Reviewed', '')}
+        <div class="card ${m.status === 'new' ? 'new' : ''}">
+          <div class="row-top">
+            <div class="avatar">${initials(m.from)}</div>
+            <div style="flex:1;">
+              <b>${m.from || 'Contact form'}</b>
+              <div class="meta">${m.regarding ? 'Re: ' + m.regarding + ' · ' : ''}${chip(m.status)}</div>
+              <p class="desc">${m.proposal || m.message || ''}</p>
+            </div>
+          </div>
+          <div class="pill-row">
+            <button class="pill pill-volt" data-id="${d.id}">${m.status === 'reviewed' ? 'Reviewed ✓' : 'Mark Reviewed'}</button>
+          </div>
+        </div>`;
+      container.appendChild(wrap);
+      const cardEl = wrap.querySelector('.card');
+      attachSwipe(wrap, cardEl, {
+        onRight: async () => { await updateDoc(doc(db, "messages", d.id), { status: 'reviewed' }); showToast('Marked reviewed', 'good'); loadMessages(); }
+      });
+    });
+    setBadge('badgeMessages', newCount);
+    container.querySelectorAll('.pill-volt').forEach(b => b.addEventListener('click', async () => {
+      await updateDoc(doc(db, "messages", b.dataset.id), { status: 'reviewed' });
+      showToast('Marked reviewed', 'good');
+      loadMessages();
+    }));
+  }
+
+  async function loadUsers(){
+    const snap = await getDocs(collection(db, "users"));
+    const container = document.getElementById('usersList');
+    if(snap.empty){ container.innerHTML = '<div class="empty"><span class="big">👤</span>No accounts yet.</div>'; return; }
+    container.innerHTML = '';
+    snap.forEach(d => {
+      const u = d.data();
       const div = document.createElement('div');
-      div.className = 'release-item';
-      div.innerHTML = `<div class="status ${r.status}">${r.status}</div><div>${r.title}</div>`;
+      div.className = 'card';
+      div.innerHTML = `
+        <div class="row-top">
+          <div class="avatar">${initials(u.name || u.email)}</div>
+          <div style="flex:1;">
+            <b>${u.name || u.email}</b>
+            <div class="meta">${u.email}</div>
+            <select class="roleSelect" data-id="${d.id}">
+              <option value="artist" ${u.role==='artist'?'selected':''}>Artist</option>
+              <option value="promoter" ${u.role==='promoter'?'selected':''}>Promoter</option>
+              <option value="manager" ${u.role==='manager'?'selected':''}>Manager</option>
+              <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
+            </select>
+          </div>
+        </div>`;
       container.appendChild(div);
     });
+    container.querySelectorAll('.roleSelect').forEach(s => s.addEventListener('change', async () => {
+      await updateDoc(doc(db, "users", s.dataset.id), { role: s.value });
+      showToast('Role updated', 'good');
+      loadUsers();
+    }));
   }
+
+  async function submitPost(status){
+    const title = document.getElementById('postTitle').value.trim();
+    const imageUrl = document.getElementById('postImage').value.trim();
+    const mediaType = document.getElementById('postMediaType').value;
+    const body = document.getElementById('postBody').value.trim();
+    const msg = document.getElementById('postMsg');
+
+    if(!title || !body){ msg.textContent = 'Title and content are required.'; msg.style.color = 'var(--bad)'; return; }
+
+    await addDoc(collection(db, "posts"), { title, imageUrl, mediaType, body, status, createdAt: serverTimestamp() });
+
+    msg.textContent = '';
+    showToast(status === 'published' ? 'Post published to the site' : 'Draft saved', 'good');
+    document.getElementById('postTitle').value = '';
+    document.getElementById('postImage').value = '';
+    document.getElementById('postMediaType').value = '';
+    document.getElementById('postBody').value = '';
+    loadPosts();
+    overlay.classList.remove('open');
+  }
+
+  document.getElementById('publishPost').addEventListener('click', () => submitPost('published'));
+  document.getElementById('saveDraftPost').addEventListener('click', () => submitPost('draft'));
+
+  async function loadPosts(){
+    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+    const snap = await getDocs(q);
+    const container = document.getElementById('postsList');
+    if(snap.empty){ container.innerHTML = '<div class="empty"><span class="big">📝</span>No posts yet — tap + to write one.</div>'; return; }
+    container.innerHTML = '';
+    snap.forEach(d => {
+      const p = d.data();
+      const isPublished = p.status === 'published';
+      const div = document.createElement('div');
+      div.className = 'card ' + (isPublished ? '' : 'pending');
+      div.innerHTML = `
+        <div class="row-top">
+          ${p.imageUrl ? `<img src="${p.imageUrl}" style="width:42px;height:42px;border-radius:10px;object-fit:cover;flex-shrink:0;">` : `<div class="avatar">${initials(p.title)}</div>`}
+          <div style="flex:1;">
+            <b>${p.title}</b>
+            <div class="meta">${chip(p.status || 'draft')}</div>
+            <p class="desc">${p.body}</p>
+          </div>
+        </div>
+        <div class="pill-row">
+          <button class="pill pill-good toggle" data-id="${d.id}" data-status="${p.status}">${isPublished ? 'Unpublish' : 'Publish'}</button>
+          <button class="pill pill-bad" data-id="${d.id}" data-title="${p.title.replace(/"/g,'&quot;')}" data-action="delete">Delete</button>
+        </div>`;
+      container.appendChild(div);
+    });
+    container.querySelectorAll('.toggle').forEach(b => b.addEventListener('click', async () => {
+      const newStatus = b.dataset.status === 'published' ? 'draft' : 'published';
+      await updateDoc(doc(db, "posts", b.dataset.id), { status: newStatus });
+      showToast(newStatus === 'published' ? 'Post published' : 'Post unpublished', 'good');
+      loadPosts();
+    }));
+    container.querySelectorAll('[data-action="delete"]').forEach(b => b.addEventListener('click', async () => {
+      const ok = await askConfirm('Delete this post?', `"${b.dataset.title}" will be permanently removed from the site. This can't be undone.`);
+      if(!ok) return;
+      await deleteDoc(doc(db, "posts", b.dataset.id));
+      showToast('Post deleted', 'bad');
+      loadPosts();
+    }));
+  }
+
+  async function loadSocials(){
+    const snap = await getDoc(doc(db, "settings", "socials"));
+    if(snap.exists()){
+      const d = snap.data();
+      document.getElementById('socialWhatsapp').value = d.whatsapp || '';
+      document.getElementById('socialFacebook').value = d.facebook || '';
+      document.getElementById('socialTiktok').value = d.tiktok || '';
+    } else {
+      document.getElementById('socialWhatsapp').value = 'https://wa.me/2347075564176';
+      document.getElementById('socialFacebook').value = 'https://www.facebook.com/profile.php?id=100088419393170';
+    }
+  }
+
+  document.getElementById('saveSocials').addEventListener('click', async () => {
+    const whatsapp = document.getElementById('socialWhatsapp').value.trim();
+    const facebook = document.getElementById('socialFacebook').value.trim();
+    const tiktok = document.getElementById('socialTiktok').value.trim();
+    await setDoc(doc(db, "settings", "socials"), { whatsapp, facebook, tiktok });
+    showToast('Social links updated', 'good');
+  });
+
+  async function loadTheme(){
+    const snap = await getDoc(doc(db, "settings", "theme"));
+    if(snap.exists()){
+      const d = snap.data();
+      document.getElementById('siteLayout').value = d.layout || 'classic';
+      document.getElementById('sitePalette').value = d.palette || 'default';
+    }
+  }
+
+  document.getElementById('saveTheme').addEventListener('click', async () => {
+    const layout = document.getElementById('siteLayout').value;
+    const palette = document.getElementById('sitePalette').value;
+    await setDoc(doc(db, "settings", "theme"), { layout, palette });
+    showToast('Applied — refresh homepage to see it', 'good');
+  });
 </script>
 
 </body>
