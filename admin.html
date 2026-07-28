@@ -42,6 +42,8 @@
   <div class="tab active" data-panel="releases">Releases</div>
   <div class="tab" data-panel="messages">Messages</div>
   <div class="tab" data-panel="users">Accounts</div>
+  <div class="tab" data-panel="posts">Posts</div>
+  <div class="tab" data-panel="settings">Social Links</div>
 </div>
 
 <main>
@@ -56,12 +58,61 @@
   <div class="panel" id="users-panel">
     <div id="usersList">Loading...</div>
   </div>
+
+  <div class="panel" id="posts-panel">
+    <div class="item" style="border-left-color:#e8b84b;">
+      <label style="display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;margin-bottom:6px;">Post title</label>
+      <input type="text" id="postTitle" style="width:100%;padding:10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;margin-bottom:10px;">
+      <label style="display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;margin-bottom:6px;">Image URL (optional)</label>
+      <input type="text" id="postImage" placeholder="https://..." style="width:100%;padding:10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;margin-bottom:10px;">
+      <label style="display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;margin-bottom:6px;">Post content</label>
+      <textarea id="postBody" style="width:100%;padding:10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;min-height:80px;margin-bottom:10px;"></textarea>
+      <button class="review" id="publishPost" style="width:100%;padding:12px;">Publish Post</button>
+      <div id="postMsg" style="margin-top:8px;font-size:0.85em;"></div>
+    </div>
+    <div id="postsList"></div>
+  </div>
+
+  <div class="panel" id="settings-panel">
+    <div class="item" style="border-left-color:#e8b84b;">
+      <label style="display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;margin-bottom:6px;">Website template</label>
+      <select id="siteLayout" style="width:100%;padding:10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;margin-bottom:14px;">
+        <option value="classic">Classic — centered, stacked</option>
+        <option value="split">Split — side-by-side hero</option>
+        <option value="editorial">Editorial — magazine style</option>
+        <option value="bold">Bold — big color blocks</option>
+        <option value="minimal">Minimal — clean whitespace</option>
+      </select>
+      <label style="display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;margin-bottom:6px;">Color palette</label>
+      <select id="sitePalette" style="width:100%;padding:10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;margin-bottom:14px;">
+        <option value="default">Gold & Violet (default)</option>
+        <option value="crimson">Crimson & Amber</option>
+        <option value="emerald">Emerald & Peach</option>
+        <option value="neon">Neon Teal & Magenta</option>
+        <option value="earth">Earth & Olive</option>
+        <option value="mono">Monochrome</option>
+      </select>
+      <button class="approve" id="saveTheme" style="width:100%;padding:12px;">Apply to Live Site</button>
+      <div id="themeMsg" style="margin-top:8px;font-size:0.85em;"></div>
+    </div>
+
+    <div class="item" style="border-left-color:#7c5cff;">
+      <label style="display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;margin-bottom:6px;">WhatsApp link</label>
+      <input type="text" id="socialWhatsapp" style="width:100%;padding:10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;margin-bottom:10px;">
+      <label style="display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;margin-bottom:6px;">Facebook link</label>
+      <input type="text" id="socialFacebook" style="width:100%;padding:10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;margin-bottom:10px;">
+      <label style="display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;margin-bottom:6px;">TikTok link</label>
+      <input type="text" id="socialTiktok" style="width:100%;padding:10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;margin-bottom:10px;">
+      <button class="approve" id="saveSocials" style="width:100%;padding:12px;">Save Links</button>
+      <div id="socialsMsg" style="margin-top:8px;font-size:0.85em;"></div>
+    </div>
+  </div>
 </main>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, getDoc, updateDoc, collection, getDocs, orderBy, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, addDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyC0Y51ipqSxtP8lgZhhdM_vUrqTIkm2VQo",
@@ -83,6 +134,9 @@
     loadReleases();
     loadMessages();
     loadUsers();
+    loadPosts();
+    loadSocials();
+    loadTheme();
   });
 
   document.getElementById('logout').addEventListener('click', () => signOut(auth).then(() => window.location.href = 'login.html'));
@@ -177,6 +231,89 @@
       loadUsers();
     }));
   }
+
+  document.getElementById('publishPost').addEventListener('click', async () => {
+    const title = document.getElementById('postTitle').value.trim();
+    const imageUrl = document.getElementById('postImage').value.trim();
+    const body = document.getElementById('postBody').value.trim();
+    const msg = document.getElementById('postMsg');
+
+    if(!title || !body){ msg.textContent = 'Title and content are required.'; msg.style.color = '#ff8080'; return; }
+
+    await addDoc(collection(db, "posts"), { title, imageUrl, body, createdAt: serverTimestamp() });
+
+    msg.textContent = 'Post published to the site.';
+    msg.style.color = '#8fe08f';
+    document.getElementById('postTitle').value = '';
+    document.getElementById('postImage').value = '';
+    document.getElementById('postBody').value = '';
+    loadPosts();
+  });
+
+  async function loadPosts(){
+    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+    const snap = await getDocs(q);
+    const container = document.getElementById('postsList');
+    if(snap.empty){ container.innerHTML = '<div class="empty">No posts yet.</div>'; return; }
+    container.innerHTML = '';
+    snap.forEach(d => {
+      const p = d.data();
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = `
+        <b>${p.title}</b>
+        <p>${p.body}</p>
+        <div class="row">
+          <button class="reject" data-id="${d.id}">Delete</button>
+        </div>`;
+      container.appendChild(div);
+    });
+    container.querySelectorAll('.reject').forEach(b => b.addEventListener('click', async () => {
+      await deleteDoc(doc(db, "posts", b.dataset.id));
+      loadPosts();
+    }));
+  }
+
+  async function loadSocials(){
+    const snap = await getDoc(doc(db, "settings", "socials"));
+    if(snap.exists()){
+      const d = snap.data();
+      document.getElementById('socialWhatsapp').value = d.whatsapp || '';
+      document.getElementById('socialFacebook').value = d.facebook || '';
+      document.getElementById('socialTiktok').value = d.tiktok || '';
+    } else {
+      document.getElementById('socialWhatsapp').value = 'https://wa.me/2347075564176';
+      document.getElementById('socialFacebook').value = 'https://www.facebook.com/profile.php?id=100088419393170';
+    }
+  }
+
+  document.getElementById('saveSocials').addEventListener('click', async () => {
+    const whatsapp = document.getElementById('socialWhatsapp').value.trim();
+    const facebook = document.getElementById('socialFacebook').value.trim();
+    const tiktok = document.getElementById('socialTiktok').value.trim();
+    await setDoc(doc(db, "settings", "socials"), { whatsapp, facebook, tiktok });
+    const msg = document.getElementById('socialsMsg');
+    msg.textContent = 'Social links updated on the live site.';
+    msg.style.color = '#8fe08f';
+  });
+
+  async function loadTheme(){
+    const snap = await getDoc(doc(db, "settings", "theme"));
+    if(snap.exists()){
+      const d = snap.data();
+      document.getElementById('siteLayout').value = d.layout || 'classic';
+      document.getElementById('sitePalette').value = d.palette || 'default';
+    }
+  }
+
+  document.getElementById('saveTheme').addEventListener('click', async () => {
+    const layout = document.getElementById('siteLayout').value;
+    const palette = document.getElementById('sitePalette').value;
+    await setDoc(doc(db, "settings", "theme"), { layout, palette });
+    const msg = document.getElementById('themeMsg');
+    msg.textContent = 'Applied — refresh the homepage to see it.';
+    msg.style.color = '#8fe08f';
+  });
 </script>
 
 </body>
