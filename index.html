@@ -250,7 +250,7 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getFirestore, collection, getDocs, addDoc, doc, getDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, collection, getDocs, addDoc, doc, getDoc, serverTimestamp, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyC0Y51ipqSxtP8lgZhhdM_vUrqTIkm2VQo",
@@ -293,7 +293,11 @@
   async function loadPosts(){
     const grid = document.getElementById('postsGrid');
     try{
-      const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+      const q = query(
+        collection(db, "posts"),
+        where("status", "==", "published"),
+        orderBy("createdAt", "desc")
+      );
       const snap = await getDocs(q);
       if(snap.empty){
         grid.innerHTML = '<p style="color:#9a97a6;">No updates yet — check back soon.</p>';
@@ -361,4 +365,4 @@
 </script>
 
 </body>
-        </html>
+</html>
