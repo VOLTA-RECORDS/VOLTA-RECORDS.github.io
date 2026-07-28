@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manager Dashboard — Volta Records</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700&display=swap');
+  body{margin:0;background:#0b0b0f;color:#f4f0e8;font-family:'Inter',sans-serif;}
+  header{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.08);}
+  header h1{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:1.2em;margin:0;}
+  header h1 span{color:#e8b84b;}
+  #logout{background:none;border:1px solid rgba(255,255,255,0.2);color:#9a97a6;padding:8px 14px;border-radius:20px;font-size:0.8em;cursor:pointer;}
+  main{max-width:640px;margin:0 auto;padding:20px 18px 60px;}
+  .welcome{color:#9a97a6;margin-bottom:22px;}
+  .welcome b{color:#f4f0e8;}
+  .tabs{display:flex;gap:6px;margin-bottom:18px;overflow-x:auto;}
+  .tab{padding:9px 16px;border-radius:20px;font-size:0.82em;color:#9a97a6;border:1px solid rgba(255,255,255,0.1);white-space:nowrap;cursor:pointer;}
+  .tab.active{background:#e8b84b;color:#1a1503;border-color:#e8b84b;font-weight:700;}
+  .panel{display:none;} .panel.active{display:block;}
+  .item{background:#141319;border:1px solid rgba(255,255,255,0.08);border-left:3px solid #7c5cff;border-radius:6px;padding:16px 18px;margin-bottom:12px;}
+  .item b{display:block;} .item p{margin:4px 0;color:#9a97a6;font-size:0.88em;}
+  .empty{color:#9a97a6;font-size:0.9em;text-align:center;padding:20px 0;}
+  .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+  .row button{padding:8px 14px;border:none;border-radius:4px;font-size:0.8em;font-weight:700;cursor:pointer;}
+  .review{background:#7c5cff;color:#fff;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Volta <span>Manager</span></h1>
+  <button id="logout">Log out</button>
+</header>
+
+<main>
+  <p class="welcome">Welcome, <b id="managerName">...</b></p>
+
+  <div class="tabs">
+    <div class="tab active" data-panel="collabs">Collab Requests</div>
+    <div class="tab" data-panel="releases">Releases</div>
+    <div class="tab" data-panel="chat">Chat</div>
+  </div>
+
+  <div class="panel active" id="collabs-panel">
+    <div id="collabsList">Loading...</div>
+  </div>
+
+  <div class="panel" id="releases-panel">
+    <div id="releasesList">Loading...</div>
+  </div>
+
+  <div class="panel" id="chat-panel">
+    <div id="chatContainer"></div>
+  </div>
+</main>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { getFirestore, doc, getDoc, updateDoc, collection, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { mountChat } from "./chat.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyC0Y51ipqSxtP8lgZhhdM_vUrqTIkm2VQo",
+    authDomain: "volta-records-7647c.firebaseapp.com",
+    projectId: "volta-records-7647c",
+    storageBucket: "volta-records-7647c.firebasestorage.app",
+    messagingSenderId: "965622035230",
+    appId: "1:965622035230:web:59184ef3b9b42504978f0f"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  onAuthStateChanged(auth, async (user) => {
+    if(!user){ window.location.href = 'login.html'; return; }
+    const userDoc = await getDoc(doc(db, "users", user.uid));
+    const data = userDoc.data();
+    if(!data || data.role !== 'manager'){ window.location.href = 'login.html'; return; }
+    document.getElementById('managerName').textContent = data.name || user.email;
+    loadCollabs();
+    loadReleases();
+    mountChat(document.getElementById('chatContainer'), user.uid, 'manager', data.name || user.email);
+  });
+
+  document.getElementById('logout').addEventListener('click', () => signOut(auth).then(() => window.location.href = 'login.html'));
+
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.panel + '-panel').classList.add('active');
+    });
+  });
+
+  async function loadCollabs(){
+    const snap = await getDocs(collection(db, "messages"));
+    const container = document.getElementById('collabsList');
+    if(snap.empty){ container.innerHTML = '<div class="empty">No collaboration requests yet.</div>'; return; }
+    container.innerHTML = '';
+    snap.forEach(d => {
+      const m = d.data();
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = `
+        <b>${m.from || 'Contact form'}</b>
+        <p>${m.regarding ? 'Re: ' + m.regarding : ''}</p>
+        <p>${m.proposal || m.message || ''}</p>
+        <div class="row">
+          <button class="review" data-id="${d.id}">${m.status === 'reviewed' ? 'Reviewed ✓' : 'Mark Reviewed'}</button>
+        </div>`;
+      container.appendChild(div);
+    });
+    container.querySelectorAll('.review').forEach(b => b.addEventListener('click', async () => {
+      await updateDoc(doc(db, "messages", b.dataset.id), { status: 'reviewed' });
+      loadCollabs();
+    }));
+  }
+
+  async function loadReleases(){
+    const snap = await getDocs(collection(db, "releases"));
+    const container = document.getElementById('releasesList');
+    if(snap.empty){ container.innerHTML = '<div class="empty">No releases yet.</div>'; return; }
+    container.innerHTML = '';
+    snap.forEach(d => {
+      const r = d.data();
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.innerHTML = `<b>${r.title}</b><p>by ${r.artistName} — status: ${r.status}</p><p>${r.desc || ''}</p>`;
+      container.appendChild(div);
+    });
+  }
+</script>
+
+</body>
+</html>
