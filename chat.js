@@ -1,4 +1,4 @@
-// Volta Records — Shared Chat Module
+// Volta Records — Shared Chat Module (Messenger-style)
 // Used by artist.html, manager.html, and admin.html
 
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -22,7 +22,8 @@ export function chatId(uidA, uidB){
   return [uidA, uidB].sort().join('_');
 }
 
-// Who each role is allowed to see/chat with
+const ROLE_LABELS = { artist: 'Artists', manager: 'Managers', admin: 'Admin', promoter: 'Promoters' };
+
 export async function getEligibleContacts(currentUid, currentRole){
   const snap = await getDocs(collection(db, "users"));
   const contacts = [];
@@ -46,38 +47,107 @@ function initials(name){
   return ((parts[0]?.[0]||'') + (parts[1]?.[0]||'')).toUpperCase() || name[0].toUpperCase();
 }
 
-function formatTime(ts){
-  if(!ts || !ts.toDate) return '';
-  return ts.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+let stylesInjected = false;
+function injectStyles(){
+  if(stylesInjected) return;
+  stylesInjected = true;
+  const style = document.createElement('style');
+  style.textContent = `
+    .vlt-msg-fab{
+      position:fixed;bottom:22px;right:22px;width:58px;height:58px;border-radius:50%;
+      background:linear-gradient(135deg,#7c5cff,#e8b84b);border:none;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;font-size:1.5em;
+      box-shadow:0 8px 20px rgba(124,92,255,0.4);z-index:900;
+    }
+    .vlt-chat-overlay{
+      position:fixed;inset:0;background:#0b0b0f;z-index:950;display:none;flex-direction:column;
+      font-family:'Inter',sans-serif;
+    }
+    .vlt-chat-overlay.open{display:flex;}
+    .vlt-chat-top{
+      display:flex;align-items:center;gap:12px;padding:14px 16px;
+      border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;
+    }
+    .vlt-back{background:none;border:none;color:#f4f0e8;font-size:1.3em;cursor:pointer;padding:4px 8px;}
+    .vlt-chat-title{font-weight:800;color:#f4f0e8;font-size:1.05em;flex:1;}
+    .vlt-close{background:none;border:none;color:#9a97a6;font-size:1.4em;cursor:pointer;padding:4px 8px;}
+    .vlt-list-view{flex:1;overflow-y:auto;padding:8px 0;}
+    .vlt-category{padding:14px 18px 6px;color:#9a97a6;font-size:0.72em;text-transform:uppercase;letter-spacing:1px;font-weight:700;}
+    .vlt-contact-row{
+      display:flex;align-items:center;gap:12px;padding:12px 18px;cursor:pointer;
+    }
+    .vlt-contact-row:active{background:rgba(255,255,255,0.04);}
+    .vlt-avatar{
+      width:44px;height:44px;border-radius:50%;flex-shrink:0;
+      background:linear-gradient(135deg,#7c5cff,#e8b84b);color:#0b0b0f;
+      display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.95em;
+    }
+    .vlt-contact-info b{display:block;color:#f4f0e8;font-size:0.95em;}
+    .vlt-contact-info span{color:#9a97a6;font-size:0.78em;}
+    .vlt-thread-view{flex:1;display:none;flex-direction:column;min-height:0;}
+    .vlt-thread-view.active{display:flex;}
+    .vlt-list-view.hidden{display:none;}
+    .vlt-messages{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;}
+    .vlt-bubble{max-width:75%;padding:9px 13px;border-radius:16px;font-size:0.9em;color:#fff;line-height:1.35;}
+    .vlt-bubble.mine{align-self:flex-end;background:#7c5cff;}
+    .vlt-bubble.theirs{align-self:flex-start;background:#1c1a24;}
+    .vlt-composer{
+      display:flex;gap:8px;padding:10px 12px;border-top:1px solid rgba(255,255,255,0.08);
+      flex-wrap:wrap;flex-shrink:0;align-items:center;
+    }
+    .vlt-composer input[type=text]{
+      flex:1;min-width:100px;padding:11px 14px;background:#141319;border:1px solid rgba(255,255,255,0.15);
+      color:#f4f0e8;border-radius:22px;font-size:0.9em;
+    }
+    .vlt-icon-btn{
+      width:42px;height:42px;border-radius:50%;border:none;background:#1c1a24;color:#e8b84b;
+      font-size:1.1em;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    }
+    .vlt-send-btn{
+      padding:11px 18px;background:#7c5cff;color:#fff;border:none;border-radius:22px;
+      font-size:0.88em;font-weight:700;cursor:pointer;flex-shrink:0;
+    }
+    .vlt-empty{color:#9a97a6;font-size:0.9em;text-align:center;padding:40px 20px;}
+  `;
+  document.head.appendChild(style);
 }
 
 export function mountChat(container, currentUid, currentRole, currentName){
-  container.innerHTML = `
-    <div id="chatRoot" style="display:flex;height:520px;max-height:70vh;border:1px solid rgba(255,255,255,0.08);border-radius:12px;overflow:hidden;background:#141319;">
-      <div id="contactList" style="width:120px;flex-shrink:0;border-right:1px solid rgba(255,255,255,0.08);overflow-y:auto;"></div>
-      <div style="flex:1;display:flex;flex-direction:column;min-width:0;">
-        <div id="chatHeader" style="padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.08);font-weight:700;font-size:0.9em;color:#9a97a6;">Select a contact</div>
-        <div id="messagesArea" style="flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;"></div>
-        <div id="composerArea" style="display:none;padding:10px;border-top:1px solid rgba(255,255,255,0.08);gap:8px;flex-wrap:wrap;">
-          <input type="text" id="chatTextInput" placeholder="Type a message..." style="flex:1;min-width:120px;padding:10px 12px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:20px;font-size:0.88em;">
-          <button id="chatSendBtn" style="padding:10px 14px;background:#7c5cff;color:#fff;border:none;border-radius:20px;font-size:0.85em;cursor:pointer;">Send</button>
-          <button id="chatImgBtn" title="Send photo" style="padding:10px 12px;background:#1c1a24;color:#e8b84b;border:none;border-radius:20px;cursor:pointer;">📷</button>
-          <input type="file" id="chatImgInput" accept="image/*" style="display:none;">
-          <button id="chatVoiceBtn" title="Record voice note" style="padding:10px 12px;background:#1c1a24;color:#e8b84b;border:none;border-radius:20px;cursor:pointer;">🎙️</button>
+  injectStyles();
+
+  container.innerHTML = `<button class="vlt-msg-fab" id="vltFab" title="Messages">💬</button>
+    <div class="vlt-chat-overlay" id="vltOverlay">
+      <div class="vlt-chat-top">
+        <button class="vlt-back" id="vltBack" style="display:none;">←</button>
+        <div class="vlt-chat-title" id="vltTitle">Messages</div>
+        <button class="vlt-close" id="vltClose">✕</button>
+      </div>
+      <div class="vlt-list-view" id="vltListView"></div>
+      <div class="vlt-thread-view" id="vltThreadView">
+        <div class="vlt-messages" id="vltMessages"></div>
+        <div class="vlt-composer">
+          <button class="vlt-icon-btn" id="vltImgBtn" title="Send photo">📷</button>
+          <input type="file" id="vltImgInput" accept="image/*" style="display:none;">
+          <button class="vlt-icon-btn" id="vltVoiceBtn" title="Voice note">🎙️</button>
+          <input type="text" id="vltTextInput" placeholder="Message...">
+          <button class="vlt-send-btn" id="vltSendBtn">Send</button>
         </div>
       </div>
-    </div>
-  `;
+    </div>`;
 
-  const contactListEl = container.querySelector('#contactList');
-  const chatHeaderEl = container.querySelector('#chatHeader');
-  const messagesAreaEl = container.querySelector('#messagesArea');
-  const composerAreaEl = container.querySelector('#composerArea');
-  const textInput = container.querySelector('#chatTextInput');
-  const sendBtn = container.querySelector('#chatSendBtn');
-  const imgBtn = container.querySelector('#chatImgBtn');
-  const imgInput = container.querySelector('#chatImgInput');
-  const voiceBtn = container.querySelector('#chatVoiceBtn');
+  const fab = container.querySelector('#vltFab');
+  const overlay = container.querySelector('#vltOverlay');
+  const backBtn = container.querySelector('#vltBack');
+  const closeBtn = container.querySelector('#vltClose');
+  const titleEl = container.querySelector('#vltTitle');
+  const listView = container.querySelector('#vltListView');
+  const threadView = container.querySelector('#vltThreadView');
+  const messagesEl = container.querySelector('#vltMessages');
+  const textInput = container.querySelector('#vltTextInput');
+  const sendBtn = container.querySelector('#vltSendBtn');
+  const imgBtn = container.querySelector('#vltImgBtn');
+  const imgInput = container.querySelector('#vltImgInput');
+  const voiceBtn = container.querySelector('#vltVoiceBtn');
 
   let activeContact = null;
   let unsubscribe = null;
@@ -85,53 +155,87 @@ export function mountChat(container, currentUid, currentRole, currentName){
   let recordedChunks = [];
   let isRecording = false;
 
+  fab.addEventListener('click', () => {
+    overlay.classList.add('open');
+    showList();
+  });
+  closeBtn.addEventListener('click', () => overlay.classList.remove('open'));
+  backBtn.addEventListener('click', () => showList());
+
+  function showList(){
+    titleEl.textContent = 'Messages';
+    backBtn.style.display = 'none';
+    listView.classList.remove('hidden');
+    threadView.classList.remove('active');
+    if(unsubscribe){ unsubscribe(); unsubscribe = null; }
+    loadContacts();
+  }
+
   async function loadContacts(){
     const contacts = await getEligibleContacts(currentUid, currentRole);
-    contactListEl.innerHTML = '';
     if(contacts.length === 0){
-      contactListEl.innerHTML = '<div style="padding:14px;color:#9a97a6;font-size:0.75em;">No contacts yet.</div>';
+      listView.innerHTML = '<div class="vlt-empty">No contacts available yet.</div>';
       return;
     }
+    const grouped = {};
     contacts.forEach(c => {
-      const btn = document.createElement('div');
-      btn.style.cssText = 'padding:12px 8px;text-align:center;cursor:pointer;border-bottom:1px solid rgba(255,255,255,0.05);';
-      btn.innerHTML = `
-        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#7c5cff,#e8b84b);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85em;color:#0b0b0f;margin:0 auto 6px;">${initials(c.name)}</div>
-        <div style="font-size:0.68em;color:#f4f0e8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.name || c.email}</div>
-        <div style="font-size:0.6em;color:#9a97a6;text-transform:uppercase;">${c.role}</div>
-      `;
-      btn.addEventListener('click', () => openThread(c));
-      contactListEl.appendChild(btn);
+      const key = c.role || 'other';
+      if(!grouped[key]) grouped[key] = [];
+      grouped[key].push(c);
+    });
+
+    listView.innerHTML = '';
+    Object.keys(grouped).forEach(role => {
+      const label = document.createElement('div');
+      label.className = 'vlt-category';
+      label.textContent = ROLE_LABELS[role] || role;
+      listView.appendChild(label);
+
+      grouped[role].forEach(c => {
+        const row = document.createElement('div');
+        row.className = 'vlt-contact-row';
+        const avatarHTML = c.photoURL
+          ? `<div class="vlt-avatar" style="overflow:hidden;"><img src="${c.photoURL}" style="width:100%;height:100%;object-fit:cover;"></div>`
+          : `<div class="vlt-avatar">${initials(c.name)}</div>`;
+        row.innerHTML = `
+          ${avatarHTML}
+          <div class="vlt-contact-info"><b>${c.name || c.email}</b><span>${c.email || ''}</span></div>
+        `;
+        row.addEventListener('click', () => openThread(c));
+        listView.appendChild(row);
+      });
     });
   }
 
   function openThread(contact){
     activeContact = contact;
-    chatHeaderEl.textContent = contact.name || contact.email;
-    composerAreaEl.style.display = 'flex';
-    if(unsubscribe) unsubscribe();
+    titleEl.textContent = contact.name || contact.email;
+    backBtn.style.display = 'inline-block';
+    listView.classList.add('hidden');
+    threadView.classList.add('active');
 
+    if(unsubscribe) unsubscribe();
     const id = chatId(currentUid, contact.id);
     setDoc(doc(db, "chats", id), { participants: [currentUid, contact.id] }, { merge: true });
 
     const q = query(collection(db, "chats", id, "messages"), orderBy("createdAt", "asc"));
     unsubscribe = onSnapshot(q, (snap) => {
-      messagesAreaEl.innerHTML = '';
+      messagesEl.innerHTML = '';
       snap.forEach(d => {
         const m = d.data();
         const mine = m.senderId === currentUid;
         const bubble = document.createElement('div');
-        bubble.style.cssText = `max-width:75%;align-self:${mine?'flex-end':'flex-start'};background:${mine?'#7c5cff':'#1c1a24'};color:#fff;padding:8px 12px;border-radius:14px;font-size:0.85em;`;
+        bubble.className = 'vlt-bubble ' + (mine ? 'mine' : 'theirs');
         if(m.type === 'image'){
-          bubble.innerHTML = `<img src="${m.url}" style="max-width:100%;border-radius:8px;display:block;">`;
+          bubble.innerHTML = `<img src="${m.url}" style="max-width:100%;border-radius:10px;display:block;">`;
         } else if(m.type === 'audio'){
-          bubble.innerHTML = `<audio src="${m.url}" controls style="max-width:200px;"></audio>`;
+          bubble.innerHTML = `<audio src="${m.url}" controls style="max-width:220px;"></audio>`;
         } else {
           bubble.textContent = m.text;
         }
-        messagesAreaEl.appendChild(bubble);
+        messagesEl.appendChild(bubble);
       });
-      messagesAreaEl.scrollTop = messagesAreaEl.scrollHeight;
+      messagesEl.scrollTop = messagesEl.scrollHeight;
     });
   }
 
@@ -139,10 +243,7 @@ export function mountChat(container, currentUid, currentRole, currentName){
     if(!activeContact) return;
     const id = chatId(currentUid, activeContact.id);
     await addDoc(collection(db, "chats", id, "messages"), {
-      senderId: currentUid,
-      senderName: currentName,
-      createdAt: serverTimestamp(),
-      ...payload
+      senderId: currentUid, senderName: currentName, createdAt: serverTimestamp(), ...payload
     });
   }
 
@@ -198,6 +299,4 @@ export function mountChat(container, currentUid, currentRole, currentName){
       voiceBtn.style.background = '#1c1a24';
     }
   });
-
-  loadContacts();
-  }
+}
