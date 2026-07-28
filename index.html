@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Volta Records — Independent Afrobeats & Rap Label</title>
+<link rel="icon" type="image/png" href="logo.png">
+<meta property="og:title" content="Volta Records">
+<meta property="og:description" content="Independent Afrobeats & Rap label — sound with a current.">
+<meta property="og:image" content="https://volta-records.github.io/logo.png">
+<meta property="og:type" content="website">
+<meta name="theme-color" content="#0b0b0f">
+<link rel="manifest" href="manifest.json">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap');
 
@@ -114,6 +121,40 @@
   footer{text-align:center;padding:36px 24px 48px;color:var(--dim);font-size:0.8em;border-top:1px solid rgba(255,255,255,0.06);}
   footer .foot-logo{color:var(--gold);font-family:'Anton',sans-serif;letter-spacing:1px;}
 
+  /* ===== SCROLL REVEAL ===== */
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity 0.7s ease, transform 0.7s ease;}
+  .reveal.in-view{opacity:1;transform:translateY(0);}
+
+  /* ===== MICRO-INTERACTIONS ===== */
+  .btn,.social-bar a,.contact-grid button{transition:transform 0.15s ease, box-shadow 0.15s ease;}
+  .btn:active,.social-bar a:active,.contact-grid button:active{transform:scale(0.96);}
+  .btn-gold:hover{box-shadow:0 0 20px rgba(232,184,75,0.35);}
+  .logo-ring{transition:transform 0.3s ease;}
+  .logo-ring:active{transform:scale(0.95);}
+
+  /* ===== TESTIMONIAL CAROUSEL ===== */
+  .testimonials{position:relative;overflow:hidden;padding:40px 24px;background:var(--panel);border-radius:12px;margin:0 24px;max-width:832px;margin-left:auto;margin-right:auto;}
+  .t-track{display:flex;transition:transform 0.5s ease;}
+  .t-slide{flex:0 0 100%;text-align:center;padding:0 16px;}
+  .t-slide p{font-size:1.1em;color:var(--paper);font-style:italic;margin:0 0 14px;}
+  .t-slide span{color:var(--gold);font-size:0.85em;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;}
+  .t-dots{display:flex;gap:8px;justify-content:center;margin-top:20px;}
+  .t-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,0.2);cursor:pointer;}
+  .t-dot.active{background:var(--gold);}
+
+  /* ===== ARTIST SPOTLIGHT ===== */
+  .roster-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;}
+  .artist-card{background:var(--panel);border:1px solid rgba(255,255,255,0.06);border-radius:10px;padding:20px 14px;text-align:center;}
+  .artist-card .av{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--volt),var(--gold));margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-family:'Anton',sans-serif;font-size:1.3em;color:#0b0b0f;}
+  .artist-card b{display:block;font-size:0.95em;}
+  .artist-card span{font-size:0.75em;color:var(--dim);}
+
+  /* ===== COUNTDOWN ===== */
+  .countdown{display:flex;gap:14px;justify-content:center;margin-top:22px;flex-wrap:wrap;}
+  .cd-unit{background:var(--panel);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px 16px;min-width:64px;}
+  .cd-unit b{display:block;font-family:'Anton',sans-serif;font-size:1.6em;color:var(--gold);}
+  .cd-unit span{font-size:0.65em;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px;}
+
   /* ===== PALETTES ===== */
   :root[data-palette="crimson"]{--gold:#ff4d4d;--volt:#f2b134;--ink:#0d0d0d;}
   :root[data-palette="emerald"]{--gold:#2ec4b6;--volt:#ffbf69;--ink:#0a0f0d;}
@@ -190,7 +231,7 @@
   <div class="social-bar" id="socialBar"></div>
 </div>
 
-<section id="bio" class="bio">
+<section id="bio" class="bio reveal">
   <span class="eyebrow">The Label</span>
   <h2>Built on the current, not the noise.</h2>
   <p>Volta Records was founded to give Afrobeats and rap artists a home where the work speaks first — no shortcuts, no manufactured sound. The name comes from voltage: the charge behind a great record, the current that moves a room before a single word is understood.</p>
@@ -203,7 +244,26 @@
   </div>
 </section>
 
-<section id="posts">
+<div class="testimonials reveal" id="testimonialsWrap" style="display:none;">
+  <div class="t-track" id="tTrack"></div>
+  <div class="t-dots" id="tDots"></div>
+</div>
+
+<section id="roster" class="reveal">
+  <span class="eyebrow">The Roster</span>
+  <h2>Meet the artists</h2>
+  <div class="roster-grid" id="rosterGrid">
+    <div class="artist-card"><div class="av">?</div><b>Roster growing</b><span>Signing soon</span></div>
+  </div>
+</section>
+
+<section id="countdown-section" class="reveal" style="display:none;">
+  <span class="eyebrow">Coming Soon</span>
+  <h2 id="cdTitle">Next Release</h2>
+  <div class="countdown" id="countdownBox"></div>
+</section>
+
+<section id="posts" class="reveal">
   <span class="eyebrow">Updates</span>
   <h2>From the label</h2>
   <div class="posts-grid" id="postsGrid">
@@ -211,7 +271,7 @@
   </div>
 </section>
 
-<section id="contact">
+<section id="contact" class="reveal">
   <span class="eyebrow">Get In Touch</span>
   <h2>Promotion & collaboration</h2>
   <p style="color:#cfcbd9;margin-bottom:24px;">Artist, promoter, or brand looking to work with Volta? Tell us what you have in mind — we read every message.</p>
@@ -293,11 +353,7 @@
   async function loadPosts(){
     const grid = document.getElementById('postsGrid');
     try{
-      const q = query(
-        collection(db, "posts"),
-        where("status", "==", "published"),
-        orderBy("createdAt", "desc")
-      );
+      const q = query(collection(db, "posts"), where("status", "==", "published"), orderBy("createdAt", "desc"));
       const snap = await getDocs(q);
       if(snap.empty){
         grid.innerHTML = '<p style="color:#9a97a6;">No updates yet — check back soon.</p>';
@@ -335,12 +391,19 @@
       return;
     }
 
+    const btn = document.getElementById('sendContact');
+    const originalText = btn.textContent;
+    btn.textContent = 'Sending...';
+    btn.disabled = true;
+
     await addDoc(collection(db, "messages"), {
       type: 'contact-form',
       from: name, email, regarding: topic, proposal: message,
       status: 'new', createdAt: serverTimestamp()
     });
 
+    btn.textContent = originalText;
+    btn.disabled = false;
     msg.textContent = 'Message sent — we\'ll get back to you soon.';
     msg.style.color = '#8fe08f';
     document.getElementById('cName').value = '';
@@ -359,9 +422,92 @@
     }catch(e){}
   }
 
+  // ---------- Scroll reveal ----------
+  function initReveal(){
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('in-view'); });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+  }
+
+  // ---------- Testimonials ----------
+  async function loadTestimonials(){
+    try{
+      const snap = await getDocs(collection(db, "testimonials"));
+      if(snap.empty) return;
+      const wrap = document.getElementById('testimonialsWrap');
+      const track = document.getElementById('tTrack');
+      const dots = document.getElementById('tDots');
+      let items = [];
+      snap.forEach(d => items.push(d.data()));
+      track.innerHTML = items.map(t => `<div class="t-slide"><p>"${t.quote}"</p><span>${t.author}</span></div>`).join('');
+      dots.innerHTML = items.map((_, i) => `<div class="t-dot ${i===0?'active':''}" data-i="${i}"></div>`).join('');
+      wrap.style.display = 'block';
+      let current = 0;
+      function show(i){
+        current = i;
+        track.style.transform = `translateX(-${i*100}%)`;
+        dots.querySelectorAll('.t-dot').forEach((d,idx) => d.classList.toggle('active', idx===i));
+      }
+      dots.querySelectorAll('.t-dot').forEach(d => d.addEventListener('click', () => show(parseInt(d.dataset.i))));
+      if(items.length > 1) setInterval(() => show((current+1) % items.length), 5000);
+    }catch(e){}
+  }
+
+  // ---------- Roster ----------
+  async function loadRoster(){
+    try{
+      const snap = await getDocs(collection(db, "artists"));
+      if(snap.empty) return;
+      const grid = document.getElementById('rosterGrid');
+      grid.innerHTML = '';
+      snap.forEach(d => {
+        const a = d.data();
+        const initials = (a.name || '?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+        grid.innerHTML += `<div class="artist-card"><div class="av">${initials}</div><b>${a.name}</b><span>${a.genre || 'Artist'}</span></div>`;
+      });
+    }catch(e){}
+  }
+
+  // ---------- Countdown ----------
+  async function loadCountdown(){
+    try{
+      const snap = await getDoc(doc(db, "settings", "countdown"));
+      if(!snap.exists()) return;
+      const d = snap.data();
+      if(!d.targetDate) return;
+      const target = new Date(d.targetDate).getTime();
+      if(isNaN(target) || target < Date.now()) return;
+
+      document.getElementById('countdown-section').style.display = 'block';
+      if(d.title) document.getElementById('cdTitle').textContent = d.title;
+      const box = document.getElementById('countdownBox');
+
+      function tick(){
+        const diff = target - Date.now();
+        if(diff <= 0){ box.innerHTML = '<p style="color:var(--gold);">It\'s here!</p>'; clearInterval(timer); return; }
+        const days = Math.floor(diff / 86400000);
+        const hours = Math.floor((diff % 86400000) / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        const secs = Math.floor((diff % 60000) / 1000);
+        box.innerHTML = `
+          <div class="cd-unit"><b>${days}</b><span>Days</span></div>
+          <div class="cd-unit"><b>${hours}</b><span>Hrs</span></div>
+          <div class="cd-unit"><b>${mins}</b><span>Min</span></div>
+          <div class="cd-unit"><b>${secs}</b><span>Sec</span></div>`;
+      }
+      tick();
+      const timer = setInterval(tick, 1000);
+    }catch(e){}
+  }
+
   loadTheme();
   loadSocials();
   loadPosts();
+  loadTestimonials();
+  loadRoster();
+  loadCountdown();
+  initReveal();
 </script>
 
 </body>
