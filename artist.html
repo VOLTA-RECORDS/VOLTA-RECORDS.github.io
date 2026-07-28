@@ -3,119 +3,76 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin Dashboard — Volta Records</title>
+<title>Artist Dashboard — Volta Records</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700&display=swap');
   body{margin:0;background:#0b0b0f;color:#f4f0e8;font-family:'Inter',sans-serif;}
-  header{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.08);position:sticky;top:0;background:#0b0b0f;z-index:10;}
+  header{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.08);}
   header h1{font-family:'Anton',sans-serif;text-transform:uppercase;font-size:1.2em;margin:0;}
   header h1 span{color:#e8b84b;}
   #logout{background:none;border:1px solid rgba(255,255,255,0.2);color:#9a97a6;padding:8px 14px;border-radius:20px;font-size:0.8em;cursor:pointer;}
-  .tabs{display:flex;gap:6px;padding:14px 20px 0;max-width:700px;margin:0 auto;overflow-x:auto;}
-  .tab{padding:9px 16px;border-radius:20px;font-size:0.82em;color:#9a97a6;border:1px solid rgba(255,255,255,0.1);white-space:nowrap;cursor:pointer;}
-  .tab.active{background:#e8b84b;color:#1a1503;border-color:#e8b84b;font-weight:700;}
-  main{max-width:700px;margin:0 auto;padding:20px 20px 60px;}
-  .panel{display:none;}
-  .panel.active{display:block;}
-  .item{background:#141319;border:1px solid rgba(255,255,255,0.08);border-left:3px solid #7c5cff;border-radius:6px;padding:16px 18px;margin-bottom:12px;}
-  .item.pending{border-left-color:#e8b84b;}
-  .item.new{border-left-color:#ff8080;}
-  .item b{display:block;}
-  .item p{margin:4px 0;color:#9a97a6;font-size:0.88em;}
-  .row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
-  .row button{padding:8px 14px;border:none;border-radius:4px;font-size:0.8em;font-weight:700;cursor:pointer;}
-  .approve{background:#8fe08f;color:#0b0b0f;}
-  .reject{background:#ff8080;color:#0b0b0f;}
-  .review{background:#7c5cff;color:#fff;}
-  select.roleSelect{padding:7px 10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;font-size:0.82em;}
-  .empty{color:#9a97a6;font-size:0.9em;text-align:center;padding:20px 0;}
+  main{max-width:600px;margin:0 auto;padding:24px 20px 60px;}
+  .welcome{color:#9a97a6;margin-bottom:28px;}
+  .welcome b{color:#f4f0e8;}
+  section{background:#141319;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:22px;margin-bottom:20px;}
+  section h2{font-size:1.05em;margin:0 0 16px;text-transform:uppercase;letter-spacing:0.5px;color:#e8b84b;}
+  label{display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px;}
+  input,textarea{width:100%;padding:11px 13px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.12);color:#f4f0e8;border-radius:4px;font-size:0.92em;font-family:'Inter',sans-serif;}
+  textarea{resize:vertical;min-height:80px;}
+  button.submit{margin-top:16px;width:100%;padding:13px;background:#7c5cff;color:#fff;border:none;border-radius:4px;font-weight:700;cursor:pointer;}
+  .msg{margin-top:10px;font-size:0.85em;}
+  .ok{color:#8fe08f;} .err{color:#ff8080;}
+  .release-item{border-left:3px solid #e8b84b;padding:10px 14px;margin-bottom:10px;background:#0b0b0f;border-radius:4px;}
+  .release-item .status{font-size:0.72em;text-transform:uppercase;color:#9a97a6;letter-spacing:0.5px;}
+  .release-item .status.pending{color:#e8b84b;}
+  .release-item .status.approved{color:#8fe08f;}
 </style>
 </head>
 <body>
 
 <header>
-  <h1>Volta <span>Admin</span></h1>
+  <h1>Volta <span>Artist</span></h1>
   <button id="logout">Log out</button>
 </header>
 
-<div class="tabs">
-  <div class="tab active" data-panel="releases">Releases</div>
-  <div class="tab" data-panel="messages">Messages</div>
-  <div class="tab" data-panel="users">Accounts</div>
-  <div class="tab" data-panel="posts">Posts</div>
-  <div class="tab" data-panel="settings">Social Links</div>
-</div>
-
 <main>
-  <div class="panel active" id="releases-panel">
-    <div id="releasesList">Loading...</div>
-  </div>
+  <p class="welcome">Welcome, <b id="artistName">...</b></p>
 
-  <div class="panel" id="messages-panel">
-    <div id="messagesList">Loading...</div>
-  </div>
+  <section>
+    <h2>Submit a Release</h2>
+    <label>Track title</label>
+    <input type="text" id="title">
+    <label>Description</label>
+    <textarea id="desc" placeholder="Genre, mood, story behind it..."></textarea>
+    <label>Link (Audiomack, YouTube, etc.)</label>
+    <input type="text" id="link">
+    <button class="submit" id="submitRelease">Submit for Review</button>
+    <div class="msg" id="releaseMsg"></div>
+  </section>
 
-  <div class="panel" id="users-panel">
-    <div id="usersList">Loading...</div>
-  </div>
+  <section>
+    <h2>Your Submissions</h2>
+    <div id="myReleases">Loading...</div>
+  </section>
 
-  <div class="panel" id="posts-panel">
-    <div class="item" style="border-left-color:#e8b84b;">
-      <label style="display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;margin-bottom:6px;">Post title</label>
-      <input type="text" id="postTitle" style="width:100%;padding:10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;margin-bottom:10px;">
-      <label style="display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;margin-bottom:6px;">Image URL (optional)</label>
-      <input type="text" id="postImage" placeholder="https://..." style="width:100%;padding:10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;margin-bottom:10px;">
-      <label style="display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;margin-bottom:6px;">Post content</label>
-      <textarea id="postBody" style="width:100%;padding:10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;min-height:80px;margin-bottom:10px;"></textarea>
-      <div class="row">
-        <button class="review" id="publishPost" style="flex:1;padding:12px;">Publish Post</button>
-        <button class="approve" id="saveDraftPost" style="flex:1;padding:12px;">Save as Draft</button>
-      </div>
-      <div id="postMsg" style="margin-top:8px;font-size:0.85em;"></div>
-    </div>
-    <div id="postsList"></div>
-  </div>
-
-  <div class="panel" id="settings-panel">
-    <div class="item" style="border-left-color:#e8b84b;">
-      <label style="display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;margin-bottom:6px;">Website template</label>
-      <select id="siteLayout" style="width:100%;padding:10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;margin-bottom:14px;">
-        <option value="classic">Classic — centered, stacked</option>
-        <option value="split">Split — side-by-side hero</option>
-        <option value="editorial">Editorial — magazine style</option>
-        <option value="bold">Bold — big color blocks</option>
-        <option value="minimal">Minimal — clean whitespace</option>
-      </select>
-      <label style="display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;margin-bottom:6px;">Color palette</label>
-      <select id="sitePalette" style="width:100%;padding:10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;margin-bottom:14px;">
-        <option value="default">Gold & Violet (default)</option>
-        <option value="crimson">Crimson & Amber</option>
-        <option value="emerald">Emerald & Peach</option>
-        <option value="neon">Neon Teal & Magenta</option>
-        <option value="earth">Earth & Olive</option>
-        <option value="mono">Monochrome</option>
-      </select>
-      <button class="approve" id="saveTheme" style="width:100%;padding:12px;">Apply to Live Site</button>
-      <div id="themeMsg" style="margin-top:8px;font-size:0.85em;"></div>
-    </div>
-
-    <div class="item" style="border-left-color:#7c5cff;">
-      <label style="display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;margin-bottom:6px;">WhatsApp link</label>
-      <input type="text" id="socialWhatsapp" style="width:100%;padding:10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;margin-bottom:10px;">
-      <label style="display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;margin-bottom:6px;">Facebook link</label>
-      <input type="text" id="socialFacebook" style="width:100%;padding:10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;margin-bottom:10px;">
-      <label style="display:block;font-size:0.78em;color:#9a97a6;text-transform:uppercase;margin-bottom:6px;">TikTok link</label>
-      <input type="text" id="socialTiktok" style="width:100%;padding:10px;background:#0b0b0f;border:1px solid rgba(255,255,255,0.15);color:#f4f0e8;border-radius:4px;margin-bottom:10px;">
-      <button class="approve" id="saveSocials" style="width:100%;padding:12px;">Save Links</button>
-      <div id="socialsMsg" style="margin-top:8px;font-size:0.85em;"></div>
-    </div>
-  </div>
+  <section>
+    <h2>Edit Bio</h2>
+    <label>Your bio</label>
+    <textarea id="bio" placeholder="Tell fans and promoters about yourself..."></textarea>
+    <button class="submit" id="saveBio">Save Bio</button>
+    <div class="msg" id="bioMsg"></div>
+  </section>
+  <section>
+    <h2>Chat</h2>
+    <div id="chatContainer"></div>
+  </section>
 </main>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, addDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, query, where, getDocs, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { mountChat } from "./chat.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyC0Y51ipqSxtP8lgZhhdM_vUrqTIkm2VQo",
@@ -129,204 +86,68 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
+  let currentUser = null;
 
   onAuthStateChanged(auth, async (user) => {
     if(!user){ window.location.href = 'login.html'; return; }
+    currentUser = user;
     const userDoc = await getDoc(doc(db, "users", user.uid));
-    if(!userDoc.exists() || userDoc.data().role !== 'admin'){ window.location.href = 'login.html'; return; }
+    const data = userDoc.data();
+    if(data.role !== 'artist'){ window.location.href = 'login.html'; return; }
+    document.getElementById('artistName').textContent = data.name || user.email;
+    document.getElementById('bio').value = data.bio || '';
     loadReleases();
-    loadMessages();
-    loadUsers();
-    loadPosts();
-    loadSocials();
-    loadTheme();
+    mountChat(document.getElementById('chatContainer'), user.uid, 'artist', data.name || user.email);
   });
 
   document.getElementById('logout').addEventListener('click', () => signOut(auth).then(() => window.location.href = 'login.html'));
 
-  // Tabs
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById(tab.dataset.panel + '-panel').classList.add('active');
+  document.getElementById('submitRelease').addEventListener('click', async () => {
+    const title = document.getElementById('title').value.trim();
+    const desc = document.getElementById('desc').value.trim();
+    const link = document.getElementById('link').value.trim();
+    const msg = document.getElementById('releaseMsg');
+
+    if(!title){ msg.textContent = 'Track title is required.'; msg.className='msg err'; return; }
+
+    await addDoc(collection(db, "releases"), {
+      title, desc, link,
+      artistId: currentUser.uid,
+      artistName: document.getElementById('artistName').textContent,
+      status: 'pending',
+      createdAt: serverTimestamp()
     });
+
+    msg.textContent = 'Submitted! Awaiting admin approval.';
+    msg.className = 'msg ok';
+    document.getElementById('title').value = '';
+    document.getElementById('desc').value = '';
+    document.getElementById('link').value = '';
+    loadReleases();
+  });
+
+  document.getElementById('saveBio').addEventListener('click', async () => {
+    const bio = document.getElementById('bio').value.trim();
+    await updateDoc(doc(db, "users", currentUser.uid), { bio });
+    const msg = document.getElementById('bioMsg');
+    msg.textContent = 'Bio saved.';
+    msg.className = 'msg ok';
   });
 
   async function loadReleases(){
-    const snap = await getDocs(collection(db, "releases"));
-    const container = document.getElementById('releasesList');
-    if(snap.empty){ container.innerHTML = '<div class="empty">No releases submitted yet.</div>'; return; }
+    const q = query(collection(db, "releases"), where("artistId", "==", currentUser.uid));
+    const snap = await getDocs(q);
+    const container = document.getElementById('myReleases');
+    if(snap.empty){ container.innerHTML = '<p style="color:#9a97a6;font-size:0.9em;">No submissions yet.</p>'; return; }
     container.innerHTML = '';
     snap.forEach(d => {
       const r = d.data();
       const div = document.createElement('div');
-      div.className = 'item ' + r.status;
-      div.innerHTML = `
-        <b>${r.title}</b>
-        <p>by ${r.artistName} — status: ${r.status}</p>
-        <p>${r.desc || ''}</p>
-        ${r.link ? `<p><a href="${r.link}" style="color:#7c5cff;" target="_blank">${r.link}</a></p>` : ''}
-        <div class="row">
-          <button class="approve" data-id="${d.id}">Approve</button>
-          <button class="reject" data-id="${d.id}">Reject</button>
-        </div>`;
+      div.className = 'release-item';
+      div.innerHTML = `<div class="status ${r.status}">${r.status}</div><div>${r.title}</div>`;
       container.appendChild(div);
     });
-    container.querySelectorAll('.approve').forEach(b => b.addEventListener('click', async () => {
-      await updateDoc(doc(db, "releases", b.dataset.id), { status: 'approved' });
-      loadReleases();
-    }));
-    container.querySelectorAll('.reject').forEach(b => b.addEventListener('click', async () => {
-      await updateDoc(doc(db, "releases", b.dataset.id), { status: 'rejected' });
-      loadReleases();
-    }));
   }
-
-  async function loadMessages(){
-    const snap = await getDocs(collection(db, "messages"));
-    const container = document.getElementById('messagesList');
-    if(snap.empty){ container.innerHTML = '<div class="empty">No messages yet.</div>'; return; }
-    container.innerHTML = '';
-    snap.forEach(d => {
-      const m = d.data();
-      const div = document.createElement('div');
-      div.className = 'item ' + m.status;
-      div.innerHTML = `
-        <b>${m.from || 'Contact form'}</b>
-        <p>${m.regarding ? 'Re: ' + m.regarding : ''}</p>
-        <p>${m.proposal || m.message || ''}</p>
-        <div class="row">
-          <button class="review" data-id="${d.id}">${m.status === 'reviewed' ? 'Reviewed ✓' : 'Mark Reviewed'}</button>
-        </div>`;
-      container.appendChild(div);
-    });
-    container.querySelectorAll('.review').forEach(b => b.addEventListener('click', async () => {
-      await updateDoc(doc(db, "messages", b.dataset.id), { status: 'reviewed' });
-      loadMessages();
-    }));
-  }
-
-  async function loadUsers(){
-    const snap = await getDocs(collection(db, "users"));
-    const container = document.getElementById('usersList');
-    if(snap.empty){ container.innerHTML = '<div class="empty">No accounts yet.</div>'; return; }
-    container.innerHTML = '';
-    snap.forEach(d => {
-      const u = d.data();
-      const div = document.createElement('div');
-      div.className = 'item';
-      div.innerHTML = `
-        <b>${u.name || u.email}</b>
-        <p>${u.email}</p>
-        <div class="row">
-          <select class="roleSelect" data-id="${d.id}">
-            <option value="artist" ${u.role==='artist'?'selected':''}>Artist</option>
-            <option value="promoter" ${u.role==='promoter'?'selected':''}>Promoter</option>
-            <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
-          </select>
-        </div>`;
-      container.appendChild(div);
-    });
-    container.querySelectorAll('.roleSelect').forEach(s => s.addEventListener('change', async () => {
-      await updateDoc(doc(db, "users", s.dataset.id), { role: s.value });
-      loadUsers();
-    }));
-  }
-
-  async function submitPost(status){
-    const title = document.getElementById('postTitle').value.trim();
-    const imageUrl = document.getElementById('postImage').value.trim();
-    const body = document.getElementById('postBody').value.trim();
-    const msg = document.getElementById('postMsg');
-
-    if(!title || !body){ msg.textContent = 'Title and content are required.'; msg.style.color = '#ff8080'; return; }
-
-    await addDoc(collection(db, "posts"), { title, imageUrl, body, status, createdAt: serverTimestamp() });
-
-    msg.textContent = status === 'published' ? 'Post published to the site.' : 'Draft saved.';
-    msg.style.color = '#8fe08f';
-    document.getElementById('postTitle').value = '';
-    document.getElementById('postImage').value = '';
-    document.getElementById('postBody').value = '';
-    loadPosts();
-  }
-
-  document.getElementById('publishPost').addEventListener('click', () => submitPost('published'));
-  document.getElementById('saveDraftPost').addEventListener('click', () => submitPost('draft'));
-
-  async function loadPosts(){
-    const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-    const snap = await getDocs(q);
-    const container = document.getElementById('postsList');
-    if(snap.empty){ container.innerHTML = '<div class="empty">No posts yet.</div>'; return; }
-    container.innerHTML = '';
-    snap.forEach(d => {
-      const p = d.data();
-      const isPublished = p.status === 'published';
-      const div = document.createElement('div');
-      div.className = 'item ' + (isPublished ? '' : 'pending');
-      div.innerHTML = `
-        <b>${p.title} ${isPublished ? '' : '<span style="color:#e8b84b;font-size:0.75em;">(draft)</span>'}</b>
-        <p>${p.body}</p>
-        <div class="row">
-          <button class="approve toggle" data-id="${d.id}" data-status="${p.status}">${isPublished ? 'Unpublish' : 'Publish'}</button>
-          <button class="reject" data-id="${d.id}">Delete</button>
-        </div>`;
-      container.appendChild(div);
-    });
-    container.querySelectorAll('.toggle').forEach(b => b.addEventListener('click', async () => {
-      const newStatus = b.dataset.status === 'published' ? 'draft' : 'published';
-      await updateDoc(doc(db, "posts", b.dataset.id), { status: newStatus });
-      loadPosts();
-    }));
-    container.querySelectorAll('.reject').forEach(b => b.addEventListener('click', async () => {
-      await deleteDoc(doc(db, "posts", b.dataset.id));
-      loadPosts();
-    }));
-  }
-
-  async function loadSocials(){
-    const snap = await getDoc(doc(db, "settings", "socials"));
-    if(snap.exists()){
-      const d = snap.data();
-      document.getElementById('socialWhatsapp').value = d.whatsapp || '';
-      document.getElementById('socialFacebook').value = d.facebook || '';
-      document.getElementById('socialTiktok').value = d.tiktok || '';
-    } else {
-      document.getElementById('socialWhatsapp').value = 'https://wa.me/2347075564176';
-      document.getElementById('socialFacebook').value = 'https://www.facebook.com/profile.php?id=100088419393170';
-    }
-  }
-
-  document.getElementById('saveSocials').addEventListener('click', async () => {
-    const whatsapp = document.getElementById('socialWhatsapp').value.trim();
-    const facebook = document.getElementById('socialFacebook').value.trim();
-    const tiktok = document.getElementById('socialTiktok').value.trim();
-    await setDoc(doc(db, "settings", "socials"), { whatsapp, facebook, tiktok });
-    const msg = document.getElementById('socialsMsg');
-    msg.textContent = 'Social links updated on the live site.';
-    msg.style.color = '#8fe08f';
-  });
-
-  async function loadTheme(){
-    const snap = await getDoc(doc(db, "settings", "theme"));
-    if(snap.exists()){
-      const d = snap.data();
-      document.getElementById('siteLayout').value = d.layout || 'classic';
-      document.getElementById('sitePalette').value = d.palette || 'default';
-    }
-  }
-
-  document.getElementById('saveTheme').addEventListener('click', async () => {
-    const layout = document.getElementById('siteLayout').value;
-    const palette = document.getElementById('sitePalette').value;
-    await setDoc(doc(db, "settings", "theme"), { layout, palette });
-    const msg = document.getElementById('themeMsg');
-    msg.textContent = 'Applied — refresh the homepage to see it.';
-    msg.style.color = '#8fe08f';
-  });
 </script>
 
 </body>
