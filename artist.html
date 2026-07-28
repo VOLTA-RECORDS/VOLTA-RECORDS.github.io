@@ -38,6 +38,13 @@
 <main>
   <p class="welcome">Welcome, <b id="artistName">...</b></p>
 
+  <section style="text-align:center;">
+    <div id="profilePhotoPreview" style="width:88px;height:88px;border-radius:50%;margin:0 auto 14px;background:linear-gradient(135deg,#7c5cff,#e8b84b);display:flex;align-items:center;justify-content:center;font-family:'Anton',sans-serif;font-size:1.6em;color:#0b0b0f;overflow:hidden;"></div>
+    <button class="submit" id="photoUploadBtn" style="max-width:220px;margin:0 auto;">Change Profile Photo</button>
+    <input type="file" id="photoFileInput" accept="image/*" style="display:none;">
+    <div class="msg" id="photoMsg" style="margin-top:8px;"></div>
+  </section>
+
   <section>
     <h2>Submit a Release</h2>
     <label>Track title</label>
@@ -62,16 +69,15 @@
     <button class="submit" id="saveBio">Save Bio</button>
     <div class="msg" id="bioMsg"></div>
   </section>
-  <section>
-    <h2>Chat</h2>
-    <div id="chatContainer"></div>
-  </section>
 </main>
+
+<div id="chatContainer"></div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, query, where, getDocs, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
   import { mountChat } from "./chat.js";
 
   const firebaseConfig = {
@@ -86,7 +92,18 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
+  const storage = getStorage(app);
   let currentUser = null;
+
+  function showProfilePhoto(data, name){
+    const preview = document.getElementById('profilePhotoPreview');
+    if(data.photoURL){
+      preview.innerHTML = `<img src="${data.photoURL}" style="width:100%;height:100%;object-fit:cover;">`;
+    } else {
+      const parts = (name || '?').trim().split(/\s+/);
+      preview.textContent = ((parts[0]?.[0]||'') + (parts[1]?.[0]||'')).toUpperCase() || name[0].toUpperCase();
+    }
+  }
 
   onAuthStateChanged(auth, async (user) => {
     if(!user){ window.location.href = 'login.html'; return; }
@@ -96,8 +113,31 @@
     if(data.role !== 'artist'){ window.location.href = 'login.html'; return; }
     document.getElementById('artistName').textContent = data.name || user.email;
     document.getElementById('bio').value = data.bio || '';
+    showProfilePhoto(data, data.name || user.email);
     loadReleases();
     mountChat(document.getElementById('chatContainer'), user.uid, 'artist', data.name || user.email);
+  });
+
+  document.getElementById('photoUploadBtn').addEventListener('click', () => document.getElementById('photoFileInput').click());
+  document.getElementById('photoFileInput').addEventListener('change', async () => {
+    const file = document.getElementById('photoFileInput').files[0];
+    if(!file || !currentUser) return;
+    const msg = document.getElementById('photoMsg');
+    msg.textContent = 'Uploading...';
+    msg.className = 'msg';
+    try{
+      const path = `profile_photos/${currentUser.uid}/${Date.now()}_${file.name}`;
+      const fileRef = ref(storage, path);
+      await uploadBytes(fileRef, file);
+      const url = await getDownloadURL(fileRef);
+      await updateDoc(doc(db, "users", currentUser.uid), { photoURL: url });
+      document.getElementById('profilePhotoPreview').innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;">`;
+      msg.textContent = 'Profile photo updated.';
+      msg.className = 'msg ok';
+    }catch(e){
+      msg.textContent = 'Upload failed.';
+      msg.className = 'msg err';
+    }
   });
 
   document.getElementById('logout').addEventListener('click', () => signOut(auth).then(() => window.location.href = 'login.html'));
