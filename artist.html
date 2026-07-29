@@ -69,6 +69,24 @@
     <button class="submit" id="saveBio">Save Bio</button>
     <div class="msg" id="bioMsg"></div>
   </section>
+
+  <section id="contractSection" style="display:none;">
+    <h2>Your Contract</h2>
+    <div id="contractStatusBanner" style="display:none;padding:12px 14px;background:rgba(143,224,143,0.1);border:1px solid rgba(143,224,143,0.3);border-radius:6px;margin-bottom:14px;color:#8fe08f;font-size:0.9em;"></div>
+    <h3 id="contractTitleDisplay" style="margin-bottom:10px;"></h3>
+    <div id="contractTextDisplay" style="white-space:pre-wrap;background:#0b0b0f;border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:16px;font-size:0.88em;color:#cfcbd9;max-height:280px;overflow-y:auto;margin-bottom:16px;line-height:1.5;"></div>
+    <div id="signBlock">
+      <p style="font-size:0.82em;color:#9a97a6;margin-bottom:12px;">By typing your full legal name below and checking the box, you confirm you have read and agree to the terms above. This creates a timestamped digital record of your consent.</p>
+      <label>Type your full legal name</label>
+      <input type="text" id="signName" placeholder="Full legal name">
+      <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:0.85em;color:#cfcbd9;">
+        <input type="checkbox" id="agreeCheckbox" style="width:auto;">
+        I have read and agree to the terms of this contract, the Terms & Conditions, and Privacy Policy.
+      </label>
+      <button class="submit" id="signContractBtn" style="margin-top:14px;">Sign Contract</button>
+      <div class="msg" id="signMsg"></div>
+    </div>
+  </section>
 </main>
 
 <div id="chatContainer"></div>
@@ -76,7 +94,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, getDoc, updateDoc, collection, addDoc, query, where, getDocs, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, collection, addDoc, query, where, getDocs, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
   import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
   import { mountChat } from "./chat.js";
 
@@ -115,6 +133,7 @@
     document.getElementById('bio').value = data.bio || '';
     showProfilePhoto(data, data.name || user.email);
     loadReleases();
+    loadContract(user.uid);
     mountChat(document.getElementById('chatContainer'), user.uid, 'artist', data.name || user.email);
   });
 
@@ -172,6 +191,45 @@
     const msg = document.getElementById('bioMsg');
     msg.textContent = 'Bio saved.';
     msg.className = 'msg ok';
+  });
+
+  async function loadContract(uid){
+    const contractSnap = await getDoc(doc(db, "contracts", uid));
+    if(!contractSnap.exists()) return;
+
+    document.getElementById('contractSection').style.display = 'block';
+    const c = contractSnap.data();
+    document.getElementById('contractTitleDisplay').textContent = c.title;
+    document.getElementById('contractTextDisplay').textContent = c.text;
+
+    const sigSnap = await getDoc(doc(db, "signatures", uid));
+    if(sigSnap.exists()){
+      const s = sigSnap.data();
+      const banner = document.getElementById('contractStatusBanner');
+      const signedDate = s.agreedAt && s.agreedAt.toDate ? s.agreedAt.toDate().toLocaleString() : 'previously';
+      banner.textContent = `✓ Signed as "${s.typedName}" on ${signedDate}`;
+      banner.style.display = 'block';
+      document.getElementById('signBlock').style.display = 'none';
+    }
+  }
+
+  document.getElementById('signContractBtn').addEventListener('click', async () => {
+    const typedName = document.getElementById('signName').value.trim();
+    const agreed = document.getElementById('agreeCheckbox').checked;
+    const msg = document.getElementById('signMsg');
+
+    if(!typedName){ msg.textContent = 'Type your full legal name.'; msg.className = 'msg err'; return; }
+    if(!agreed){ msg.textContent = 'You must check the agreement box.'; msg.className = 'msg err'; return; }
+
+    await setDoc(doc(db, "signatures", currentUser.uid), {
+      typedName,
+      agreedAt: serverTimestamp(),
+      userAgent: navigator.userAgent
+    });
+
+    msg.textContent = 'Contract signed successfully.';
+    msg.className = 'msg ok';
+    loadContract(currentUser.uid);
   });
 
   async function loadReleases(){
