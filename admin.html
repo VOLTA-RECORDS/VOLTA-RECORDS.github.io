@@ -322,6 +322,23 @@
       </div>
     </div>
   </div>
+
+  <div class="panel" id="contracts-panel">
+    <div class="section-label">Create / Update Contract</div>
+    <div class="card">
+      <label class="field-label">Assign to artist</label>
+      <select id="contractArtistSelect" class="field-input"></select>
+      <label class="field-label">Contract title</label>
+      <input type="text" id="contractTitle" class="field-input" placeholder="e.g. Volta Records Artist Agreement">
+      <label class="field-label">Contract text</label>
+      <textarea id="contractText" class="field-input" style="min-height:180px;resize:vertical;" placeholder="Paste your full contract text here..."></textarea>
+      <button class="btn-full btn-gold" id="saveContract">Save Contract for This Artist</button>
+      <div id="contractMsg" class="msg-line"></div>
+    </div>
+
+    <div class="section-label">Signature Status</div>
+    <div id="signaturesList"></div>
+  </div>
 </main>
 
 <div id="chatContainer"></div>
@@ -399,12 +416,12 @@
     <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
     <span>Links</span>
   </div>
-</div>
+  </div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, addDoc, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, addDoc, serverTimestamp, query, orderBy, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
   import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
   import { mountChat } from "./chat.js";
 
@@ -538,6 +555,8 @@
     loadPosts();
     loadSocials();
     loadTheme();
+    loadContractArtists();
+    loadSignatures();
     mountChat(document.getElementById('chatContainer'), user.uid, 'admin', userDoc.data().name || user.email);
   });
 
@@ -801,6 +820,82 @@
     await setDoc(doc(db, "settings", "theme"), { layout, palette });
     showToast('Applied — refresh homepage to see it', 'good');
   });
+
+  // ---------- Contracts ----------
+  async function loadContractArtists(){
+    const q = query(collection(db, "users"), where("role", "==", "artist"));
+    const snap = await getDocs(q);
+    const select = document.getElementById('contractArtistSelect');
+    select.innerHTML = '';
+    if(snap.empty){
+      select.innerHTML = '<option value="">No artists yet</option>';
+      return;
+    }
+    snap.forEach(d => {
+      const u = d.data();
+      const opt = document.createElement('option');
+      opt.value = d.id;
+      opt.textContent = u.name || u.email;
+      select.appendChild(opt);
+    });
+    loadExistingContract();
+  }
+
+  document.getElementById('contractArtistSelect').addEventListener('change', loadExistingContract);
+
+  async function loadExistingContract(){
+    const artistId = document.getElementById('contractArtistSelect').value;
+    if(!artistId) return;
+    const snap = await getDoc(doc(db, "contracts", artistId));
+    if(snap.exists()){
+      document.getElementById('contractTitle').value = snap.data().title || '';
+      document.getElementById('contractText').value = snap.data().text || '';
+    } else {
+      document.getElementById('contractTitle').value = '';
+      document.getElementById('contractText').value = '';
+    }
+  }
+
+  document.getElementById('saveContract').addEventListener('click', async () => {
+    const artistId = document.getElementById('contractArtistSelect').value;
+    const title = document.getElementById('contractTitle').value.trim();
+    const text = document.getElementById('contractText').value.trim();
+    const msg = document.getElementById('contractMsg');
+    if(!artistId || !title || !text){
+      msg.textContent = 'Select an artist and fill in title + text.';
+      msg.style.color = 'var(--bad)';
+      return;
+    }
+    await setDoc(doc(db, "contracts", artistId), { title, text, updatedAt: serverTimestamp() });
+    msg.textContent = 'Contract saved — visible to this artist now.';
+    msg.style.color = 'var(--good)';
+    showToast('Contract saved', 'good');
+    loadSignatures();
+  });
+
+  async function loadSignatures(){
+    const container = document.getElementById('signaturesList');
+    const usersSnap = await getDocs(query(collection(db, "users"), where("role", "==", "artist")));
+    if(usersSnap.empty){
+      container.innerHTML = '<div class="empty">No artists yet.</div>';
+      return;
+    }
+    container.innerHTML = '';
+    for(const userDocSnap of usersSnap.docs){
+      const u = userDocSnap.data();
+      const sigSnap = await getDoc(doc(db, "signatures", userDocSnap.id));
+      const div = document.createElement('div');
+      div.className = 'card';
+      if(sigSnap.exists()){
+        const s = sigSnap.data();
+        const signedDate = s.agreedAt && s.agreedAt.toDate ? s.agreedAt.toDate().toLocaleString() : 'Recently';
+        div.innerHTML = `<b>${u.name || u.email}</b><div class="meta">Signed as "${s.typedName}" on ${signedDate}</div><span class="status-chip chip-approved">Signed</span>`;
+      } else {
+        div.innerHTML = `<b>${u.name || u.email}</b><div class="meta">Has not signed yet</div><span class="status-chip chip-pending">Pending</span>`;
+      }
+      container.appendChild(div);
+    }
+  }
 </script>
 
 </body>
